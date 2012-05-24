@@ -1,0 +1,28 @@
+CXX=i686-w64-mingw32-g++
+CC=i686-w64-mingw32-gcc
+CFLAGS=-O3 -funsigned-char -Wno-write-strings -fno-rtti -march=core2 -I./SDL/include -I./SDL_mixer/include -I./freeglut/include
+CXXFLAGS=$(CFLAGS)
+LDFLAGS=-L./SDL/lib/x86 -L./SDL_mixer/lib/x86 -L./freeglut/lib/x86 -lopengl32 -lglu32 -lfreeglut -lSDL -lSDL_mixer
+
+CPPSRC=$(wildcard *.cpp)
+CSRC=$(wildcard *.c)
+OBJ=$(CPPSRC:.cpp=.o) $(CSRC:.c=.o)
+
+
+
+%.o : %.cpp
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
+%.o : %.c
+	$(CC) $(CFLAGS) -c $< -o $@
+
+final.exe: $(OBJ)
+	$(CXX) $(OBJ) $(CFLAGS) $(LDFLAGS) -o $@
+
+all: final.exe
+
+fixcpp:
+	perl -p -i -e 's/void main/int main/g' *cpp
+
+clean:
+	rm final $(OBJ)

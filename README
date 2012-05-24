@@ -1,0 +1,24 @@
+This was originally my final project for CMSC405, "Computer Graphics." It was a
+class on OpenGL. 
+
+Download image data: http://bumba.net/~hmaon/amazeballs/data.zip
+
+
+
+
+
+
+Building on Linux:
+
+A Makefile is included. 
+
+You need freeglut, SDL, SDL_mixer, and SDL_image to build. On Ubuntu, the
+packages required are libsdl-mixer1.2-dev, libsdl-image1.2-dev, freeglut3-dev.
+
+
+Building on Windows:
+
+You need libs and DLLs.
+http://bumba.net/~hmaon/amazeballs/amazeballs_windows_libs.7z
+
+-- greg v.
