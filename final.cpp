@@ -327,6 +327,7 @@ GLuint send_one_texture(char *image_filename)
     glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_REPEAT);
 
+#if 1
 	// an SGI extension from OpenGL 1.4 that seems to be missing
 	// http://www.opengl.org/registry/specs/SGIS/generate_mipmap.txt
 	if (isExtensionSupported("GL_SGIS_generate_mipmap"))
@@ -337,6 +338,7 @@ GLuint send_one_texture(char *image_filename)
 		glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_TRUE); 
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 	} else puts("no GL_SGIS_generate_mipmap");
+#endif
 
     printf("loading %s\n", image_filename);
 	image = IMG_Load(image_filename);

@@ -1,5 +1,6 @@
 CC=gcc
-CFLAGS=-O3 -g -funsigned-char -Wno-write-strings -fno-rtti -march=native `sdl-config --cflags`
+CXX=g++
+CFLAGS=-O2 -g -funsigned-char -Wno-write-strings -fno-rtti -march=native `sdl-config --cflags`
 CXXFLAGS=$(CFLAGS)
 LDFLAGS=-lGL -lGLU -lglut `sdl-config --libs` -lSDL_mixer -lSDL_image
 
@@ -10,13 +11,13 @@ OBJ=$(CPPSRC:.cpp=.o) $(CSRC:.c=.o)
 
 
 %.o : %.cpp
-	g++ $(CXXFLAGS) -c $< -o $@
+	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 %.o : %.c
-	gcc $(CFLAGS) -c $< -o $@
+	$(CC) $(CFLAGS) -c $< -o $@
 
 final: $(OBJ)
-	g++ $(OBJ) $(CFLAGS) $(LDFLAGS) -o $@
+	$(CXX) $(OBJ) $(CFLAGS) $(LDFLAGS) -o $@
 
 all: final
 

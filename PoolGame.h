@@ -12,7 +12,7 @@ typedef enum poolgamestate_enum
 {
     intro,  // some kind of intro screen?
     help,   // a help screen of some sort
-    menu,   // the stupid dumb thing that's dumb
+    menu,   // just the menu
     cue,    // positioning the stick!
     watch,  // watch the balls roll
     over,   // game over screen?

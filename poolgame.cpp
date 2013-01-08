@@ -147,6 +147,7 @@ private:
 };
 
 
+// use GLUquadric for sphere objects
 GLUquadric *PoolBall::gluq = NULL;
 const double PoolBall::diameter = 5.7; // standard American pool balls are 57mm (=5.7cm) 
 const double PoolBall::rolling_friction = 0.15;
@@ -158,25 +159,20 @@ const double PoolBall::COrestitution = 0.95;;
 
 
 // constructor
-PoolBall::PoolBall(PoolTable *t, double initx, double initz, double dummy, int initindex)
+PoolBall::PoolBall(PoolTable *t, double initx, double initz, double dummy, int initindex) : table(t), x(initx), z(initz), index(initindex)
 {
     inplay = true;
 
 	movement_remaining = 0.0;
 
-    index=initindex;
-
 	fprintf(stderr, "PoolBall() reporting...\n");
-
-    table = t;
-    x = initx;
-    z = initz;
 
 	switch(index)
 	{
 	case 0:
         if (PoolGame::state == intro)
         {
+            // for the intro scene, send the cue ball down the table
             dx = 0.01;
             dz = max_speed / 4;
             break;
@@ -255,7 +251,7 @@ void PoolBall::render()
     gluSphere(PoolBall::gluq, diameter/2, 42, 42);
     glPopMatrix();
 
-	glDisable(GL_TEXTURE_2D);
+	//glDisable(GL_TEXTURE_2D);
 
 }
 
@@ -322,12 +318,13 @@ public:
 
     static const double width; // these two are important
     static const double length;
-    static const double height; // this is for visuals, no gameplay effect
+    static const double height; // but this is for visuals, no gameplay effect
 
 	static const int maxballs = 20;
 
 
     GLfloat shadowmap[138*2][138]; // bleh, just... these are obviously width and length but we need int constants. It just has to fit the table dimensions.
+    // TODO, replace with real shadows :/
 
 	// PoolTable::render()
     void render(void)
@@ -719,7 +716,7 @@ void PoolBall::move(double base_time_fraction)
         if (sorted[i]->index == index) continue; // could probably just start at index 1 but let's not make this confusing...
         // test whether other ball has already run move() this frame??? XXX
 
-        if (!(sorted[i]->inplay)) continue; // DOH! Don't collide with balls in pockets...
+        if (!(sorted[i]->inplay)) continue; // Don't collide with balls in pockets...
 
 		Pabx =  x - sorted[i]-> x; // vector in the direction of the other ball? or whatever? derp
         Pabz =  z - sorted[i]-> z;
@@ -805,16 +802,10 @@ void PoolBall::actually_reposition(double fdx, double fdz)
 	glMatrixMode(GL_MODELVIEW);
 	glPushMatrix();
     glLoadIdentity();
-	//glLoadMatrixd(rotation); // I thought it was in this order first but it's not and I don't know why so f@$# :(
-
-	// const double sin_neg90 = -1;
-	// const double cos_neg90 = 0;
 
 	vx = fdz;
 	vy = 0;
 	vz = -fdx;
-
-	//normalize3d(&vx, &vy, &vz);
 
 	glRotated(360 * (distance /(M_PI * diameter)), vx, 0.0, vz);
 	glMultMatrixd(rotation);
@@ -822,8 +813,6 @@ void PoolBall::actually_reposition(double fdx, double fdz)
 	glGetDoublev(GL_MODELVIEW_MATRIX, rotation); // store it back for later
 
 	glPopMatrix();
-
-    
 }
 
 
@@ -1382,7 +1371,7 @@ void PoolGame::display1(void)
 		glColor3ub(255, 63, 0);
 		glBegin(GL_LINES);
 		glVertex3f(table->ball[0]->x, -PoolBall::diameter/2, table->ball[0]->z);
-		glVertex3f(table->ball[0]->x + 50*cos(M_PI*cue_angle/180.0), PoolBall::diameter/2, table->ball[0]->z + 50*sin(M_PI*cue_angle/180.0));
+		glVertex3f(table->ball[0]->x + 50*cos(M_PI*cue_angle/180.0), -PoolBall::diameter/2, table->ball[0]->z + 50*sin(M_PI*cue_angle/180.0));
 		glEnd();
 	}
 
