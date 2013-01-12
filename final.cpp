@@ -433,7 +433,7 @@ int main (int argc, char** argv)
     fprintf(stderr, "Hello and welcome!\n");
     fflush(stderr);
 
-    Game *pool = new PoolGame();
+    //Game *pool = new PoolGame();
 
     glutInitDisplayMode (GLUT_DOUBLE | GLUT_RGB);
     // Set initial Window position
@@ -454,10 +454,10 @@ int main (int argc, char** argv)
 	glutIdleFunc(animate);
 
 
-    pool->gogogo(); 
+    PoolGame::gogogo(); 
 
     glutMainLoop ( );
 
 	Mix_CloseAudio();
-    delete pool;
+    //delete pool;
 }

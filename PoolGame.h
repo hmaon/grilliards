@@ -1,12 +1,16 @@
 #pragma once
 
-#include"game_interface.h"
+//#include"game_interface.h"
+
+namespace PoolGame
+{
 
 // some stuff the implementation of which is not important
 class PoolTable;
 class PoolBall;
 
 #define NUM_TEXTURES 16
+
 
 typedef enum poolgamestate_enum
 {
@@ -41,52 +45,45 @@ typedef enum poolgamemode_enum
 #define MAXMENUOPTION 6
 
 
-// the class that's invoked from elsewhere to run this game:
+// the stuff that's invoked from elsewhere to run this game:
+/*
+bool chasecam; // fixed view cam otherwise
 
-class PoolGame : public Game
-{
-public: // Blah... This is apparently not a C++ pattern
-        // and this class ought to be a namespace instead. I don't know.
-        // It's not a big deal for this project.
+float camera_angle; // rotation of the camera about Y axis
 
-    static bool chasecam; // fixed view cam otherwise
+float cue_angle; // orientation of the cue stick
+float cue_power; // (0..1]
 
-    static float camera_angle; // rotation of the camera about Y axis
-    
-    static float cue_angle; // orientation of the cue stick
-	static float cue_power; // (0..1]
+PoolGameState state;
 
-    static PoolGameState state;
+PoolGameMode mode;
+bool use_mass;
 
-	static PoolGameMode mode;
-    static bool use_mass;
+int menu_option;
 
-    static int menu_option;
+PoolTable *table;
 
-    static PoolTable *table;
+int hits;
 
-	static int hits;
+// graphics and sound assets:
+GLuint textures[NUM_TEXTURES];
+Mix_Chunk *ballclack;
+Mix_Chunk *beepverb;
+Mix_Chunk *squirble;
+Mix_Chunk *sadwhistle;
+*/
+// methods and such:
 
-	// graphics and sound assets:
-	static GLuint textures[NUM_TEXTURES];
-	static Mix_Chunk *ballclack;
-	static Mix_Chunk *beepverb;
-	static Mix_Chunk *squirble;
-	static Mix_Chunk *sadwhistle;
+void load_assets(); 
 
-	// methods and such:
-	PoolGame(); // constructor
+// event handlers for freeglut:
+void idle1(void);
+void menu_keyboard(unsigned char key, int x, int y);
+void keyboard1(unsigned char key, int x, int y);
+void special1(int key, int x, int y);
+void menu_special(int key, int x, int y);
+void display1(void);
 
-	static void load_assets(); // can't load things when the constructor runs *shrug*
-
-	// event handlers for freeglut:
-	static void idle1(void);
-    static void menu_keyboard(unsigned char key, int x, int y);
-    static void keyboard1(unsigned char key, int x, int y);
-    static void special1(int key, int x, int y);
-    static void menu_special(int key, int x, int y);
-    static void display1(void);
-
-    void gogogo(); // run this to make the class sink its hooks into glut
-	static void newgame(); // reset table, rack balls, derp derp.
+void gogogo(); // run this to make the class sink its hooks into glut
+void newgame(); // reset table, rack balls, derp derp.
 };

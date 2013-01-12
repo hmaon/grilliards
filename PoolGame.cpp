@@ -11,28 +11,57 @@
 #include<math.h>
 #include<string.h>
 
-#include"game_interface.h"
+//#include"game_interface.h"
 #include"PoolGame.h"
 #include"final.h"
+
+namespace PoolGame
+{
+
+// PoolGame global variables
+PoolTable *table = NULL;
+bool chasecam = false;
+float camera_angle = 0;
+float cue_angle = 270;
+float cue_power = 1.0f;
+bool use_mass = true;
+int hits = 0;
+
+
+PoolGameState state = intro; // pool game state? you don't say? must be the state of the pool game?
+PoolGameMode mode = amazeballs; // yep.
+
+
+// graphics and sound assets:
+GLuint textures[NUM_TEXTURES] = {-1};
+
+namespace Sounds
+{
+// sounds?
+Mix_Chunk *ballclack = NULL;
+Mix_Chunk *beepverb = NULL;
+Mix_Chunk *squirble = NULL;
+Mix_Chunk *sadwhistle = NULL;
+};
 
 // some file-global stuff
 // I seem to have trouble initializing arrays as static class members
 // so now they're just global variables. *shrug*
-static GLfloat mat_white[] = {1.0, 1.0, 1.0, 1.0};
-static GLfloat light_position[] = {0.0, 100.0, -85.0, 1.0};
-static GLfloat light_position1[] = {0.0, 100.0, 85.0, 1.0};
-static GLfloat nil_position[] = {0, 0, 0, 1};
+GLfloat mat_white[] = {1.0, 1.0, 1.0, 1.0};
+GLfloat light_position[] = {0.0, 100.0, -85.0, 1.0};
+GLfloat light_position1[] = {0.0, 100.0, 85.0, 1.0};
+GLfloat nil_position[] = {0, 0, 0, 1};
 // https://en.wikipedia.org/wiki/Sunset_%28color%29
-static GLfloat sunset[] = {250/255.0f, 214/255.0f, 165/255.0f, 1.0f};
-static GLfloat tungsten_100w[] = {255.0f/255, 214.0f/255, 170.0f/255};
-static GLfloat dim_ambiance[] = {255.0f/1024, 214.0f/1024, 170.0f/1024};
-static GLfloat mat_blue[] = {0.2f, 0.5f, 1.0f, 1.0f};
-static GLfloat mat_green[] = {0.2f, 1.0f, 0.2f, 1.0f};
-static GLfloat mat_black[] = {0.0f, 0.0f, 0.0f, 1.0f};
-static GLfloat mat_grey[] = {0.33f, 0.33f, 0.33f, 1.0f};
-//static GLfloat mat_shininess[] = {66.0f};
+GLfloat sunset[] = {250/255.0f, 214/255.0f, 165/255.0f, 1.0f};
+GLfloat tungsten_100w[] = {255.0f/255, 214.0f/255, 170.0f/255};
+GLfloat dim_ambiance[] = {255.0f/1024, 214.0f/1024, 170.0f/1024};
+GLfloat mat_blue[] = {0.2f, 0.5f, 1.0f, 1.0f};
+GLfloat mat_green[] = {0.2f, 1.0f, 0.2f, 1.0f};
+GLfloat mat_black[] = {0.0f, 0.0f, 0.0f, 1.0f};
+GLfloat mat_grey[] = {0.33f, 0.33f, 0.33f, 1.0f};
+// GLfloat mat_shininess[] = {66.0f};
 
-static GLfloat v_down[] = {0, -1, 0};
+GLfloat v_down[] = {0, -1, 0};
 
 
 typedef struct BallInfos_struct
@@ -107,7 +136,6 @@ public:
     static const double rolling_friction;
     static const double COrestitution; // without this, collisions don't look realistic enough
 
-protected:
 	void handle_collision(PoolBall& other, long double t, double time_fraction);
 
     void actually_reposition(double fdx, double fdz);
@@ -170,7 +198,7 @@ PoolBall::PoolBall(PoolTable *t, double initx, double initz, double dummy, int i
 	switch(index)
 	{
 	case 0:
-        if (PoolGame::state == intro)
+        if (state == intro)
         {
             // for the intro scene, send the cue ball down the table
             dx = 0.01;
@@ -203,17 +231,17 @@ PoolBall::PoolBall(PoolTable *t, double initx, double initz, double dummy, int i
         gluQuadricTexture(PoolBall::gluq, GL_TRUE);
     }
 
-	switch(PoolGame::mode)
+	switch(mode)
 	{
 	case grilliards:
-		tex = PoolGame::textures[NUM_BEEF];
+		tex = textures[NUM_BEEF];
 		name = bally[NUM_BEEF].name;
 		mass = 0.8;
 		break;
 
 	default:
-		tex = PoolGame::textures[index % NUM_TEXTURES];
-		mass = PoolGame::use_mass ? bally[index % NUM_TEXTURES].mass : 1;
+		tex = textures[index % NUM_TEXTURES];
+		mass = use_mass ? bally[index % NUM_TEXTURES].mass : 1;
 		name = bally[index % NUM_TEXTURES].name;
 		break;
 	}
@@ -251,7 +279,7 @@ void PoolBall::render()
     gluSphere(PoolBall::gluq, diameter/2, 42, 42);
     glPopMatrix();
 
-	//glDisable(GL_TEXTURE_2D);
+	glDisable(GL_TEXTURE_2D);
 
 }
 
@@ -292,9 +320,9 @@ void PoolBall::friction(double time_fraction)
 //
 class PoolTable
 {
+public:
 	int ballsleft;
 
-public:
 	void clear_balls()
 	{
 		if (balls > 0)
@@ -404,6 +432,7 @@ public:
         // pretty stupid. The correct approach would be to use two triangles
         // and a good fragment shader. That's something for the next level
         // of the class, though, right?
+#if 1
 		for(int x = 0; x < width-1; x++)
 		{
 			glBegin(GL_TRIANGLE_STRIP); // GL_BACON_STRIP, mmm, delicious
@@ -421,6 +450,7 @@ public:
 			}
 			glEnd();
 		}
+#endif
 
 
         //glDisable(GL_COLOR_MATERIAL);
@@ -485,7 +515,7 @@ public:
 			ballsleft--; // don't count the cue ball, eh
 
 			if (!ballsleft) // the jokes just write themselves
-				PoolGame::state = over;
+				state = over;
 		}
     }
 
@@ -503,13 +533,8 @@ public:
 		}
 	}
 
-
-private:
 	int balls;
 
-
-    
-protected:
 	PoolBall *ball[maxballs];
 
 	friend class PoolBall;
@@ -526,7 +551,7 @@ void PoolBall::test_pocket()
 {
 	bool out = false;
 
-	if (PoolGame::state == intro || PoolGame::state == over || PoolGame::state == menu || PoolGame::state == help) return;
+	if (state == intro || state == over || state == menu || state == help) return;
 
 	if (abs(z) < diameter) out = true; // side pockets
 	if (abs(z) > table->length/2-diameter && abs(x) > table->width/2-diameter) out = true; // corner pockets... too big? *shrug*
@@ -536,7 +561,7 @@ void PoolBall::test_pocket()
 		if (index == 0)
 		{
 			// scratched the cue ball
-			PoolGame::state = over;
+			state = over;
 			inplay = false;
 			sadwhistle();
 		} else
@@ -902,7 +927,7 @@ void PoolBall::handle_collision(PoolBall& other, long double t, double time_frac
 
 
     // play a collision sound
-	Mix_PlayChannel(index%8, PoolGame::ballclack, 0);
+	Mix_PlayChannel(index%8, Sounds::ballclack, 0);
 	Mix_Volume(index%8, (int) (64.0 * ((abs(v1n_prime) + abs(v2n_prime)) / (max_speed*2.0)))); // scale the volume to the total normal velocity relative to max speed that two balls could have
 	// 128 is max channel volume but it's rude to blast max volume at people
 	//next_channel();
@@ -914,39 +939,39 @@ double wide_view[6] = {200, 150, 0, 0, 0, 0};
 
 
 
-void PoolGame::idle1(void)
+void idle1(void)
 {
-	PoolGame::table->update();
+	table->update();
 }
 
 // currently selected menu item
-int PoolGame::menu_option = STARTGAME;
+int menu_option = STARTGAME;
 
 
 void beep()
 {
-	Mix_PlayChannel(next_sound_channel, PoolGame::beepverb, 0);
+	Mix_PlayChannel(next_sound_channel, Sounds::beepverb, 0);
 	Mix_Volume(next_sound_channel, 64); 
     next_channel();
 }
 
 void squirble()
 {
-	Mix_PlayChannel(next_sound_channel, PoolGame::squirble, 0);
+	Mix_PlayChannel(next_sound_channel, Sounds::squirble, 0);
 	Mix_Volume(next_sound_channel, 32); 
     next_channel();
 }
 
 void sadwhistle()
 {
-	Mix_PlayChannel(next_sound_channel, PoolGame::sadwhistle, 0);
+	Mix_PlayChannel(next_sound_channel, Sounds::sadwhistle, 0);
 	Mix_Volume(next_sound_channel, 64); 
     next_channel();
 }
 
 
 
-void PoolGame::menu_keyboard(unsigned char key, int x, int y)
+void menu_keyboard(unsigned char key, int x, int y)
 {
     switch(key)
     {
@@ -957,16 +982,16 @@ void PoolGame::menu_keyboard(unsigned char key, int x, int y)
             case STARTGAME:
                 newgame();
                 state = cue;
-                glutKeyboardFunc(PoolGame::keyboard1);
-                glutSpecialFunc(PoolGame::special1);
+                glutKeyboardFunc(keyboard1);
+                glutSpecialFunc(special1);
                 glutPostRedisplay();
                 break;
 
             case CONFUSED:
                 // haha, confusion
                 state = help;
-                glutSpecialFunc(PoolGame::special1);
-                glutKeyboardFunc(PoolGame::keyboard1);
+                glutSpecialFunc(special1);
+                glutKeyboardFunc(keyboard1);
                 glutPostRedisplay();
                 break;
 
@@ -1009,7 +1034,7 @@ void PoolGame::menu_keyboard(unsigned char key, int x, int y)
 
         case 'n':
         case 'N':
-            PoolGame::newgame();
+            newgame();
             break;
 
         
@@ -1021,7 +1046,7 @@ void PoolGame::menu_keyboard(unsigned char key, int x, int y)
 }
 
 
-void PoolGame::keyboard1(unsigned char key, int x, int y)
+void keyboard1(unsigned char key, int x, int y)
 {
 	if (state == confirm)
 	{
@@ -1054,8 +1079,8 @@ void PoolGame::keyboard1(unsigned char key, int x, int y)
         if (state == intro || state == help || state == over)
         {
             state = menu;
-            glutKeyboardFunc(PoolGame::menu_keyboard);
-            glutSpecialFunc(PoolGame::menu_special);
+            glutKeyboardFunc(menu_keyboard);
+            glutSpecialFunc(menu_special);
             glutPostRedisplay(); 
             break;
         }
@@ -1116,7 +1141,7 @@ void PoolGame::keyboard1(unsigned char key, int x, int y)
 
 	case 'n':
 	case 'N':
-		PoolGame::newgame();
+		newgame();
 		break;
 
 
@@ -1127,7 +1152,7 @@ void PoolGame::keyboard1(unsigned char key, int x, int y)
 
     case 'c':
     case 'C':
-        PoolGame::chasecam = !PoolGame::chasecam;
+        chasecam = !chasecam;
         glutPostRedisplay();
         break;
 
@@ -1164,7 +1189,7 @@ void PoolGame::keyboard1(unsigned char key, int x, int y)
     }
 }
 
-void PoolGame::menu_special(int key, int x, int y)
+void menu_special(int key, int x, int y)
 {
     unsigned char fakekey;
     switch(key)
@@ -1181,7 +1206,7 @@ void PoolGame::menu_special(int key, int x, int y)
     fprintf(stderr, "Very special key: %d\n", key);
 }
 
-void PoolGame::special1(int key, int x, int y)
+void special1(int key, int x, int y)
 {
     unsigned char fakekey;
     switch(key)
@@ -1200,7 +1225,7 @@ void PoolGame::special1(int key, int x, int y)
 
 
 
-void PoolGame::display1(void)
+void display1(void)
 {
 	int notzero = 1;
 
@@ -1357,7 +1382,7 @@ void PoolGame::display1(void)
     glPushMatrix();
     glTranslated(0, -10, 0);
 
-    PoolGame::table->render(); // our table and balls!
+    table->render(); // our table and balls!
 
     glPopMatrix();
 
@@ -1624,50 +1649,26 @@ void PoolGame::display1(void)
 }
 
 
-// PoolGame static variables... like global variables but less convenient!
-PoolTable *PoolGame::table = NULL;
-GLuint PoolGame::textures[NUM_TEXTURES] = {-1};
-bool PoolGame::chasecam = false;
-float PoolGame::camera_angle = 0;
-float PoolGame::cue_angle = 270;
-float PoolGame::cue_power = 1.0f;
-bool PoolGame::use_mass = true;
-int PoolGame::hits = 0;
 
 
-PoolGameState PoolGame::state = intro; // pool game state? you don't say? must be the state of the pool game?
-PoolGameMode PoolGame::mode = amazeballs; // yep.
-
-// sounds?
-Mix_Chunk *PoolGame::ballclack = NULL;
-Mix_Chunk *PoolGame::beepverb = NULL;
-Mix_Chunk *PoolGame::squirble = NULL;
-Mix_Chunk *PoolGame::sadwhistle = NULL;
-
-
-PoolGame::PoolGame()
-{
-
-}
-
-void PoolGame::gogogo()
+void gogogo()
 {
 	load_assets();
 
-    if (PoolGame::table == NULL) 
+    if (table == NULL) 
 	{
-		PoolGame::table = new PoolTable();
+		table = new PoolTable();
 		newgame();
 	}
 
-    glutDisplayFunc(&PoolGame::display1);
-    glutKeyboardFunc(&PoolGame::keyboard1);
-    glutSpecialFunc(&PoolGame::special1);
-	finalIdleFunc = &PoolGame::idle1;
+    glutDisplayFunc(&display1);
+    glutKeyboardFunc(&keyboard1);
+    glutSpecialFunc(&special1);
+	finalIdleFunc = &idle1;
 }
 
 
-void PoolGame::load_assets()
+void load_assets()
 {
 	if (textures[0] == -1)
 	{
@@ -1677,23 +1678,22 @@ void PoolGame::load_assets()
 		}
 	}
 
-	
-	if (!ballclack) ballclack = Mix_LoadWAV("data/lonepoolballhit.wav"); // we want clacking balls!
-	if (!ballclack) fprintf(stderr, ":( %s \n", SDL_GetError());
+	if (!Sounds::ballclack) Sounds::ballclack = Mix_LoadWAV("data/lonepoolballhit.wav"); // we want clacking balls!
+	if (!Sounds::ballclack) fprintf(stderr, ":( %s \n", SDL_GetError());
 
-    if (!beepverb) beepverb = Mix_LoadWAV("data/beepverb.wav");
-	if (!beepverb) fprintf(stderr, ":( %s \n", SDL_GetError());
+    if (!Sounds::beepverb) Sounds::beepverb = Mix_LoadWAV("data/beepverb.wav");
+	if (!Sounds::beepverb) fprintf(stderr, ":( %s \n", SDL_GetError());
 
-    if (!squirble) squirble = Mix_LoadWAV("data/lowsquirble.wav");
-	if (!squirble) fprintf(stderr, ":( %s \n", SDL_GetError());
+    if (!Sounds::squirble) Sounds::squirble = Mix_LoadWAV("data/lowsquirble.wav");
+	if (!Sounds::squirble) fprintf(stderr, ":( %s \n", SDL_GetError());
 
-	if (!sadwhistle) sadwhistle = Mix_LoadWAV("data/sadwhistle.wav");
-	if (!sadwhistle) fprintf(stderr, ":( %s \n", SDL_GetError());
+	if (!Sounds::sadwhistle) Sounds::sadwhistle = Mix_LoadWAV("data/sadwhistle.wav");
+	if (!Sounds::sadwhistle) fprintf(stderr, ":( %s \n", SDL_GetError());
 }
 
 
 // reset all the things?
-void PoolGame::newgame()
+void newgame()
 {
 	load_assets();
 
@@ -1724,3 +1724,5 @@ void PoolGame::newgame()
 
 	table->balls = NUM_TEXTURES;
 }
+
+}; // namespace

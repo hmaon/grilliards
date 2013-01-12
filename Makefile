@@ -1,6 +1,6 @@
 CC=gcc
 CXX=g++
-CFLAGS=-O2 -g -funsigned-char -Wno-write-strings -fno-rtti -march=native `sdl-config --cflags`
+CFLAGS=-O3 -g -funsigned-char -Wno-write-strings -fno-rtti -march=native `sdl-config --cflags` -ffast-math
 CXXFLAGS=$(CFLAGS)
 LDFLAGS=-lGL -lGLU -lglut `sdl-config --libs` -lSDL_mixer -lSDL_image
 
