@@ -171,7 +171,7 @@ private:
 	void test_pocket();
 
 	friend class PoolTable; // they're like best buddies, for real
-    friend class PoolGame; // why the hell not
+    // friend class PoolGame; // why the hell not // because it doesn't exist anymore that's why 
 };
 
 
