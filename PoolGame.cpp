@@ -276,7 +276,7 @@ void PoolBall::render()
 	// rotate!
 	glMultMatrixd(rotation);
 
-    gluSphere(PoolBall::gluq, diameter/2, 42, 42);
+    gluSphere(PoolBall::gluq, diameter/2, 20, 20);
     glPopMatrix();
 
 	glDisable(GL_TEXTURE_2D);

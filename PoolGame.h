@@ -1,7 +1,5 @@
 #pragma once
 
-//#include"game_interface.h"
-
 namespace PoolGame
 {
 
