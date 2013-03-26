@@ -1,8 +1,8 @@
 CC=gcc
-CXX=g++
-CFLAGS=-O2 -g -funsigned-char -Wno-write-strings -fno-rtti -march=native `sdl-config --cflags` -ffast-math
-CXXFLAGS=$(CFLAGS)
-LDFLAGS=-lGL -lGLU -lglut `sdl-config --libs` -lSDL_mixer -lSDL_image
+CXX=codelitegcc g++
+CFLAGS=-O3 -flto -g -funsigned-char -Wno-write-strings -march=native -ffast-math `pkg-config --cflags sdl SDL_mixer SDL_image glew` -Wall
+CXXFLAGS=$(CFLAGS) -fno-rtti
+LDFLAGS=-lGL -lGLU -lglut `pkg-config --libs sdl SDL_mixer SDL_image glew` -flto
 
 CPPSRC=$(wildcard *.cpp)
 CSRC=$(wildcard *.c)
@@ -16,13 +16,13 @@ OBJ=$(CPPSRC:.cpp=.o) $(CSRC:.c=.o)
 %.o : %.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
-final: $(OBJ)
+grilliards: $(OBJ)
 	$(CXX) $(OBJ) $(CFLAGS) $(LDFLAGS) -o $@
 
-all: final
+all: grilliards
 
 fixcpp:
 	perl -p -i -e 's/void main/int main/g' *cpp
 
 clean:
-	rm final $(OBJ)
+	rm grilliards $(OBJ)

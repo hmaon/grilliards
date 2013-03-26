@@ -1,59 +1,39 @@
-#include<SDL.h>
-#include<SDL_opengl.h>
-#include<GL/freeglut.h>
-#include<stdio.h>
+#include <glew.h> // must be included before all the other header garbage
+#define NO_SDL_GLEXT 1
 
-#include<SDL_mixer.h>
-#include<SDL_image.h>
+#include <vector>
+#include <string>
 
-#include"PoolGame.h"
+#include <SDL.h>
+#include <SDL_opengl.h>
+#include <GL/freeglut.h>
+#include <stdio.h>
+
+#include <SDL_mixer.h>
+#include <SDL_image.h>
+
+#include "PoolGame.h"
 
 // for windows to define M_PI and such:
 #define _USE_MATH_DEFINES 1
 
-#include<math.h>
-#include<string.h>
+#include <cmath>
+#include <math.h>
+#include <string.h>
 
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+
+#include "shader.hpp"
+
+#include "final.h"
 
 #ifndef M_PI
 # define M_PI           3.14159265358979323846  /* pi */
 #endif
 
-// This function checks for the presence of an OpenGL extension.
-// from: http://www.opengl.org/archives/resources/features/OGLextensions/
-int
-isExtensionSupported(const char *extension)
-{
-  const GLubyte *extensions = NULL;
-  const GLubyte *start;
-  GLubyte *where, *terminator;
-
-  /* Extension names should not have spaces. */
-  where = (GLubyte *) strchr(extension, ' ');
-  if (where || *extension == '\0')
-    return 0;
-  extensions = glGetString(GL_EXTENSIONS);
-  /* It takes a bit of care to be fool-proof about parsing the
-     OpenGL extensions string. Don't be fooled by sub-strings,
-     etc. */
-  start = extensions;
-  for (;;) {
-    where = (GLubyte *) strstr((const char *) start, extension);
-    if (!where)
-      break;
-    terminator = where + strlen(extension);
-    if (where == start || *(where - 1) == ' ')
-      if (*terminator == ' ' || *terminator == '\0')
-        return 1;
-    start = terminator;
-  }
-  return 0;
-}
-
-
 
 // Global Variable Section
-// List all of your global variables, stuctures and other definition here
 
 void (*finalIdleFunc)(void) = NULL;
 
@@ -87,13 +67,72 @@ bool normals = false;
 GLsizei winWidth = 1024, winHeight = 768;   
 
 
+// shader program id
+GLuint program_id = -1;
+
+// MVP matrix id, needed everywhere...
+GLuint MVP_id = -1;
+
+glm::dmat4 view, perspective;
+
+void NaNtest(glm::dmat4 &m)
+{
+	for (int y = 0; y < 4; ++y)
+		for (int x = 0; x < 4; ++x)
+			if (m[y][x] == NAN)
+				puts("NAN! :(");
+}
+
+
+const char *strGLError(GLenum glErr)
+{
+    char *err;
+
+    switch(glErr)
+    {
+    case GL_INVALID_ENUM:
+        err = "GL_INVALID_ENUM";
+        break;
+    case GL_INVALID_VALUE:
+        err = "GL_INVALID_VALUE";
+        break;
+    case GL_INVALID_OPERATION:
+        err = "GL_INVALID_OPERATION";
+        break;
+    case GL_STACK_OVERFLOW:
+        err = "GL_STACK_OVERFLOW";
+        break;
+    case GL_STACK_UNDERFLOW:
+        err = "GL_STACK_UNDERFLOW";
+        break;
+    case GL_OUT_OF_MEMORY:
+        err = "GL_OUT_OF_MEMORY";
+        break;
+    case GL_NO_ERROR:
+        err = "No error! How did you even reach this code?";
+        break;
+    default:
+        err = "Unknown error code!";
+        break;
+    }
+
+    return err;
+}
+
+
+
+
 // Initialize method
 void init (void)
 {
       // Get and display your OpenGL version
 	const GLubyte *Vstr;
 	Vstr = glGetString (GL_VERSION);
-	fprintf(stderr, "Your OpenGL version is %s\n", Vstr);
+	printf("Your OpenGL version is %s\n", Vstr);
+
+	int n;
+	glGetIntegerv(GL_MAX_VERTEX_ATTRIBS, &n);
+	printf("GL_MAX_VERTEX_ATTRIBS: %d\n", n);
 
 	// black window
    	glClearColor (0.0, 0.0, 0.0, 1.0);
@@ -112,7 +151,7 @@ void init (void)
 #ifndef GL_MULTISAMPLE_ARB
 #define GL_MULTISAMPLE_ARB                      0x809D
 #endif
-	glEnable(GL_MULTISAMPLE_ARB);
+	glEnable(GL_MULTISAMPLE_ARB);	
 }
 
 
@@ -162,18 +201,6 @@ void displayFPSOverlay(bool readyfortext)
 }
 
 
-void normalize3d(double *x, double *y, double *z)
-{
-    double mag = sqrt((*x)*(*x) + (*y)*(*y) + (*z)*(*z));
-
-    if (mag == 1.0) return; // unlikely?
-
-    *x /= mag;
-    *y /= mag;
-    *z /= mag;
-}
-
-
 float viewangle = 45.0;
 
 // window redraw function
@@ -183,11 +210,25 @@ void winReshapeFcn (GLint newWidth, GLint newHeight)
     winWidth = newWidth;
     winHeight = newHeight;
 
+#if 0
     glMatrixMode (GL_PROJECTION);
     glLoadIdentity();
-   	
+ 	
     gluPerspective(viewangle, aspect, 5, 600.0); 
+	glGetDoublev(GL_PROJECTION_MATRIX, &perspective[0][0]);
+#endif
 
+
+	perspective = glm::perspective(viewangle, aspect, 5.0f, 600.0f);
+	printf("perspective matrix: \n");
+	for (int y = 0; y < 4; ++y)
+	{
+		for (int x = 0; x < 4; ++x)
+		{
+			printf("%lf\t", perspective[y][x]);
+		}
+		printf("\n");
+	}
 
     glViewport(0, 0, newWidth, newHeight);
 
@@ -234,7 +275,7 @@ void animate(void)
 
     if (finalIdleFunc != NULL)  finalIdleFunc();
 
-	SDL_Delay(1); // yielding the CPU actually avoids stutter sometimes because it the OS get on with its background stuff earlier or whatever; it depends on the OS scheduler
+	SDL_Delay(1); // let the OS work if it needs to
 }
 
 
@@ -330,7 +371,7 @@ GLuint send_one_texture(char *image_filename)
 #if 1
 	// an SGI extension from OpenGL 1.4 that seems to be missing
 	// http://www.opengl.org/registry/specs/SGIS/generate_mipmap.txt
-	if (isExtensionSupported("GL_SGIS_generate_mipmap"))
+	if (GLEW_SGIS_generate_mipmap)
 	{		
 #ifndef GL_GENERATE_MIPMAP
 #define GL_GENERATE_MIPMAP                0x8191
@@ -352,7 +393,7 @@ GLuint send_one_texture(char *image_filename)
         
 
     // for lousy quality, compress textures: 
-    //glTexImage2D(GL_TEXTURE_2D, 0, GL_COMPRESSED_RGB, image->width, image->height, 0, GL_RGB, GL_UNSIGNED_BYTE, image->pixel_data);
+    // glTexImage2D(GL_TEXTURE_2D, 0, GL_COMPRESSED_RGB, proper->w, proper->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, proper->pixels);
 
 #ifndef GL_BGR
 #define GL_BGR 0x80E0
@@ -367,7 +408,7 @@ GLuint send_one_texture(char *image_filename)
 #if 0
 	// some OpenGL 3.x stuff that's not even in my damn header files
 #ifdef glGenerateMipmap
-	glGenerateMipmap(GL_TEXTURE_2D); 
+	glGenerateMipmap(GL_TEXTURE_2D); glErrorCheck();
 #endif
 #endif
 
@@ -381,27 +422,11 @@ GLuint send_one_texture(char *image_filename)
 // looking at things is hard sometimes, OK?
 void look_at(double *at)
 {
-	gluLookAt(at[0], at[1], at[2], at[3], at[4], at[5], 0, 1, 0); // up is always up, otherwise I get motion sickness; deal with it.
+	// deprecated...
+	// gluLookAt(at[0], at[1], at[2], at[3], at[4], at[5], 0, 1, 0); // up is always up, otherwise I get motion sickness; deal with it.
+	view = glm::lookAt(glm::dvec3(at[0], at[1], at[2]), glm::dvec3(at[3], at[4], at[5]), glm::dvec3(0.0, 1.0, 0.0));
 }
 
-
-double interp(double a, double b, double t)
-{
-	return a + (b-a)*t;
-}
-
-// t is [0..1]
-void interpolate_camera(double *from, double *to, double t)
-{
-	gluLookAt(
-		interp(from[0], to[0], t),
-		interp(from[1], to[1], t),
-		interp(from[2], to[2], t),
-		interp(from[3], to[3], t),
-		interp(from[4], to[4], t),
-		interp(from[5], to[5], t),
-		0, 1, 0);
-}
 
 // we don't need SDL's shenanigans since we're just using it for image loading and sound:
 #undef main
@@ -430,10 +455,8 @@ int main (int argc, char** argv)
 #endif
     }
 
-    fprintf(stderr, "Hello and welcome!\n");
-    fflush(stderr);
-
-    //Game *pool = new PoolGame();
+    printf("Hello and welcome!\n");
+    fflush(stdout);
 
     glutInitDisplayMode (GLUT_DOUBLE | GLUT_RGB);
     // Set initial Window position
@@ -442,17 +465,27 @@ int main (int argc, char** argv)
     glutInitWindowSize (winWidth, winHeight);
     // Set Window Title
     glutCreateWindow ("Greg Velichansky, CMSC405 final project, a pool game of some sort.");
+	
+	glewExperimental = GL_TRUE;
+	GLenum err = glewInit();
+	if (GLEW_OK != err)
+	{
+	  /* Problem: glewInit failed, something is seriously wrong. */
+	  fprintf(stderr, "Error: %s\n", glewGetErrorString(err));
+	  exit(1);
+	}
+	fprintf(stdout, "Status: Using GLEW %s\n", glewGetString(GLEW_VERSION));
+	
     // Initialize
     init ( );
 
-    // Display function call
-    //glutDisplayFunc (display);
     // Window reshape call
     glutReshapeFunc (winReshapeFcn);
     glutKeyboardFunc (base_key_down);
 	set_start_ticks();
 	glutIdleFunc(animate);
 
+	winReshapeFcn(winWidth, winHeight);
 
     PoolGame::gogogo(); 
 

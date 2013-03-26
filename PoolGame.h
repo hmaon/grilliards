@@ -43,33 +43,6 @@ typedef enum poolgamemode_enum
 #define MAXMENUOPTION 6
 
 
-// the stuff that's invoked from elsewhere to run this game:
-/*
-bool chasecam; // fixed view cam otherwise
-
-float camera_angle; // rotation of the camera about Y axis
-
-float cue_angle; // orientation of the cue stick
-float cue_power; // (0..1]
-
-PoolGameState state;
-
-PoolGameMode mode;
-bool use_mass;
-
-int menu_option;
-
-PoolTable *table;
-
-int hits;
-
-// graphics and sound assets:
-GLuint textures[NUM_TEXTURES];
-Mix_Chunk *ballclack;
-Mix_Chunk *beepverb;
-Mix_Chunk *squirble;
-Mix_Chunk *sadwhistle;
-*/
 // methods and such:
 
 void load_assets(); 

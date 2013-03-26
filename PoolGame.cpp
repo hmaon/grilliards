@@ -1,19 +1,32 @@
-#include<SDL.h>
-#include<SDL_opengl.h>
-#include<SDL_mixer.h>
-#include<GL/freeglut.h>
+#include <glew.h>
+#define NO_SDL_GLEXT 1
 
-#include<stdio.h>
+#include "objloader.hpp"
+
+#include <SDL.h>
+#include <SDL_opengl.h>
+#include <SDL_mixer.h>
+#include <GL/freeglut.h>
+
+#include <stdio.h>
 
 // for windows to define M_PI and such:
 #define _USE_MATH_DEFINES 1
 
-#include<math.h>
-#include<string.h>
+#include <cmath>
+#include <limits>
+#include <math.h>
+#include <string.h>
+
+#include <iostream>
+
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 
 //#include"game_interface.h"
-#include"PoolGame.h"
-#include"final.h"
+#include "PoolGame.h"
+#include "final.h"
+#include "shader.hpp"
 
 namespace PoolGame
 {
@@ -27,13 +40,12 @@ float cue_power = 1.0f;
 bool use_mass = true;
 int hits = 0;
 
-
 PoolGameState state = intro; // pool game state? you don't say? must be the state of the pool game?
 PoolGameMode mode = amazeballs; // yep.
 
 
 // graphics and sound assets:
-GLuint textures[NUM_TEXTURES] = {-1};
+GLint textures[NUM_TEXTURES] = {-1};
 
 namespace Sounds
 {
@@ -124,8 +136,13 @@ class PoolBall
 public:
     PoolBall(PoolTable *t, double initx, double initz, double initmass, int number);
 	~PoolBall();
+	
+	static std::vector<glm::vec3> vertices;
+	static std::vector<glm::vec2> uvs;
+	static std::vector<glm::vec3> normals;
+	static GLuint VAO_id, vertexbuffer, uvbuffer, normalbuffer;
 
-    void render();
+    void render(glm::dmat4 &parent_model);
 	double distance_squared(PoolBall& other);
 
     void friction(double time_fraction);
@@ -146,7 +163,8 @@ public:
 
     double dx, dz; // velocity
 
-	double rotation[16]; // 4x4 rotation matrix for the orientation of the ball
+	//double rotation[16]; // 4x4 rotation matrix for the orientation of the ball
+	glm::dmat4 rotation;
 
 	double mass;
 
@@ -171,7 +189,6 @@ private:
 	void test_pocket();
 
 	friend class PoolTable; // they're like best buddies, for real
-    // friend class PoolGame; // why the hell not // because it doesn't exist anymore that's why 
 };
 
 
@@ -181,19 +198,20 @@ const double PoolBall::diameter = 5.7; // standard American pool balls are 57mm 
 const double PoolBall::rolling_friction = 0.15;
 const double PoolBall::COrestitution = 0.95;;
 
+std::vector<glm::vec3> PoolBall::vertices;
+std::vector<glm::vec2> PoolBall::uvs;
+std::vector<glm::vec3> PoolBall::normals;	
 
-
+GLuint PoolBall::VAO_id, PoolBall::vertexbuffer, PoolBall::uvbuffer, PoolBall::normalbuffer;
 
 
 
 // constructor
-PoolBall::PoolBall(PoolTable *t, double initx, double initz, double dummy, int initindex) : table(t), x(initx), z(initz), index(initindex)
+PoolBall::PoolBall(PoolTable *t, double initx, double initz, double dummy, int initindex) : x(initx), z(initz), rotation(1.0), table(t), index(initindex)
 {
     inplay = true;
 
 	movement_remaining = 0.0;
-
-	fprintf(stderr, "PoolBall() reporting...\n");
 
 	switch(index)
 	{
@@ -216,13 +234,6 @@ PoolBall::PoolBall(PoolTable *t, double initx, double initz, double dummy, int i
 
 		break;
 	}
-
-	for (int i = 0; i < 16; ++i) rotation[i] = 0.0;
-
-	rotation[0] = 1.0; // init to identity
-	rotation[5] = 1.0;
-	rotation[10] = 1.0;
-	rotation[15] = 1.0;
 
     if (PoolBall::gluq == NULL)
     {
@@ -250,14 +261,12 @@ PoolBall::PoolBall(PoolTable *t, double initx, double initz, double dummy, int i
 // destructor
 PoolBall::~PoolBall()
 {
-	fprintf(stderr, "PoolBall() peacing out...\n");
-
 }
 
 
 
 // draw the pool ball!
-void PoolBall::render()
+void PoolBall::render(glm::dmat4 &parent_model)
 {
 	glEnable(GL_TEXTURE_2D);
 
@@ -268,19 +277,51 @@ void PoolBall::render()
 
 	glColor3ub(255, 255, 255);
 
-	if (tex) glBindTexture(GL_TEXTURE_2D, tex);
+	if (tex)
+	{
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, tex);
+	}
 
-    glPushMatrix();
-    glTranslated(x, -diameter/2, z); 
+	glm::dmat4 model = parent_model * glm::translate(glm::dmat4(1.0), glm::dvec3(x, diameter/2, z)) * rotation * glm::scale(glm::dmat4(1.0), glm::dvec3(diameter/2, diameter/2, diameter/2));
 
-	// rotate!
-	glMultMatrixd(rotation);
+	glm::mat4 MVP;
+	MVP << (perspective * view * model);
 
-    gluSphere(PoolBall::gluq, diameter/2, 20, 20);
-    glPopMatrix();
+	//NaNtest(perspective);
+	//NaNtest(view);
+	//NaNtest(model);
+	//NaNtest(MVP);
+	
+	glm::vec4 test(0.0, 0.0, 0.0, 1.0);
+	test = MVP * test;
+	//printf("%lf, %lf, %lf, %lf\n", test[0], test[1], test[2], test[3]);
 
+	glErrorCheck();
+	
+	glUseProgram(program_id); glErrorCheck();
+
+	glUniformMatrix4fv(MVP_id, 1, 0, &MVP[0][0]); glErrorCheck();
+	glUniform1i(glGetUniformLocation(program_id, "tex_id"), 0); glErrorCheck();	
+		
+	glBindVertexArray(VAO_id); glErrorCheck();
+
+	glEnableVertexAttribArray(0); glErrorCheck();
+	//glBindBuffer(GL_ARRAY_BUFFER, PoolBall::vertexbuffer); glErrorCheck();
+	//glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0); glErrorCheck();
+	
+	glEnableVertexAttribArray(1); glErrorCheck();
+	//glEnableVertexAttribArray(2);
+
+	glDrawArrays(GL_TRIANGLES, 0, vertices.size()); glErrorCheck();
+	
+	//glDisableVertexAttribArray(0);
+	//glDisableVertexAttribArray(1);
+	//glDisableVertexAttribArray(2);
+	
+	glUseProgram(0); glErrorCheck();
+	
 	glDisable(GL_TEXTURE_2D);
-
 }
 
 // distance squared to another ball
@@ -355,9 +396,8 @@ public:
     // TODO, replace with real shadows :/
 
 	// PoolTable::render()
-    void render(void)
+    void render(glm::dmat4 &parent_model)
     {
-        glPushMatrix();
 
 		glDisable(GL_TEXTURE_2D);
 
@@ -425,14 +465,15 @@ public:
         glutSolidCube(1.0);
 		//glutWireCube(1.0);
 #endif
-		glTranslated(-width/2, 5, -length/2);
+		// glTranslated(-width/2, 5, -length/2);
+		glm::dmat4 model = parent_model * glm::translate(glm::dmat4(1.0), glm::dvec3(-width/2, 5.0, -length/2));
 
 
         // this draws a table surface out of ~38000 triangles which is really
         // pretty stupid. The correct approach would be to use two triangles
         // and a good fragment shader. That's something for the next level
         // of the class, though, right?
-#if 1
+#if 0
 		for(int x = 0; x < width-1; x++)
 		{
 			glBegin(GL_TRIANGLE_STRIP); // GL_BACON_STRIP, mmm, delicious
@@ -455,13 +496,11 @@ public:
 
         //glDisable(GL_COLOR_MATERIAL);
 
-        glPopMatrix();
-
 		// draw "pockets"
 		// except the table should really be a mesh that we load and I'm not spending a lot of time on these :/
 
         glColor3ub(255, 255, 0);
-        
+#if 0        
         glPushMatrix();
         glTranslated(width/2, 10-PoolBall::diameter*2, 0);
         glutSolidCube(PoolBall::diameter*2);
@@ -492,29 +531,28 @@ public:
         glutSolidCube(PoolBall::diameter*2);
         glPopMatrix();
 
-
+#endif
         // 
         // draw the balls
         //
 
+		model = parent_model * glm::translate(glm::dmat4(1.0), glm::dvec3(0, 5+ ball[0]->diameter, 0)); 
+
 		if (balls > 0)
 		{
 			ballsleft = NUM_TEXTURES;
-			glPushMatrix();
 
-			glTranslated(0, 5 + ball[0]->diameter, 0);
+			//glTranslated(0, 5 + ball[0]->diameter, 0);
 
 			for (int i = 0; i < balls; ++i)
 			{
-				if (ball[i]->inplay) ball[i]->render();
+				if (ball[i]->inplay) ball[i]->render(model);
 				else --ballsleft;
 			}
 
-			glPopMatrix();
-
 			ballsleft--; // don't count the cue ball, eh
 
-			if (!ballsleft) // the jokes just write themselves
+			if (!ballsleft)
 				state = over;
 		}
     }
@@ -603,12 +641,12 @@ void PoolBall::move(double base_time_fraction)
 
 	// though they're not really specific to any number of dimensions...
 
-	// t = N·(Q-E) / N·D
+	// t = NÂ·(Q-E) / NÂ·D
 	// where N is a normal vector of the plane, Q is a point on the plane, 
     // E is the ray origin,
 	// and D is the ray's direction vector
 	// if t < 0, the plane is behind the origin
-	// if N·D=0, the ray is parallel to the plane
+	// if NÂ·D=0, the ray is parallel to the plane
 	// if t >=0, the intersection point is E + tD
 
 	double NdotD, numerator, tx, tz;
@@ -817,27 +855,15 @@ void PoolBall::move(double base_time_fraction)
     
 void PoolBall::actually_reposition(double fdx, double fdz)
 {
-	double vx, vy, vz;
-
     x += fdx;
     z += fdz;
 
 	double distance = sqrt(fdx*fdx + fdz*fdz);
+	if (distance < std::numeric_limits<double>::epsilon()) return; 
+	// a distance of ~0 results in a bogus axis and an angle of ~0, which fill the rotation matrix with NaNs
 
-	glMatrixMode(GL_MODELVIEW);
-	glPushMatrix();
-    glLoadIdentity();
-
-	vx = fdz;
-	vy = 0;
-	vz = -fdx;
-
-	glRotated(360 * (distance /(M_PI * diameter)), vx, 0.0, vz);
-	glMultMatrixd(rotation);
-
-	glGetDoublev(GL_MODELVIEW_MATRIX, rotation); // store it back for later
-
-	glPopMatrix();
+	glm::dvec3 axis(fdz, 0, -fdx);
+	rotation = glm::rotate(glm::dmat4(1.0), 360.0 * (distance /(M_PI * diameter)), glm::normalize(axis)) * rotation;
 }
 
 
@@ -889,7 +915,7 @@ void PoolBall::handle_collision(PoolBall& other, long double t, double time_frac
 	uNz /= mag;
 
 	// untangle stupid-ass intersected spheres. ugh!
-	if (t == 0.0)
+	if (abs(t) < std::numeric_limits<double>::epsilon())
 	{
 		other.actually_reposition((diameter-mag) * uNx * 1.0001, (diameter-mag) * uNz * 1.0001);
 		return handle_collision(other, -1.0, 0); // uNz, uNz, etc. have to be recalculated
@@ -988,7 +1014,6 @@ void menu_keyboard(unsigned char key, int x, int y)
                 break;
 
             case CONFUSED:
-                // haha, confusion
                 state = help;
                 glutSpecialFunc(special1);
                 glutKeyboardFunc(keyboard1);
@@ -1053,7 +1078,7 @@ void keyboard1(unsigned char key, int x, int y)
 		if (key == 'y' || key == 'Y')
 		{
 			state = over;
-			key = 27;
+			key = SDLK_ESCAPE;
 		} else
 		{
 			state = cue;
@@ -1064,7 +1089,7 @@ void keyboard1(unsigned char key, int x, int y)
 
     switch(key)
     {
-    case 13:
+    case SDLK_RETURN:
 		if (state == cue) // enter hits the ball
 		{
 			table->ball[0]->dx = -cos(M_PI*cue_angle/180.0) * cue_power * max_speed;
@@ -1075,7 +1100,7 @@ void keyboard1(unsigned char key, int x, int y)
 			break;
 		}
 
-    case 27:
+    case SDLK_ESCAPE:
         if (state == intro || state == help || state == over)
         {
             state = menu;
@@ -1085,7 +1110,7 @@ void keyboard1(unsigned char key, int x, int y)
             break;
         }
 
-		if (state == cue && key == 27) // 27 is ESC, btw
+		if (state == cue && key == SDLK_ESCAPE)
 		{
 			state = confirm;
 			glutPostRedisplay();
@@ -1121,7 +1146,7 @@ void keyboard1(unsigned char key, int x, int y)
 
     case 'S':
     case 's':
-		cue_power -= 0.1f;
+		cue_power -= 0.05f;
 		if (cue_power < 0.0f) cue_power = 0.0f;
 		glutPostRedisplay();
         break;
@@ -1191,7 +1216,6 @@ void keyboard1(unsigned char key, int x, int y)
 
 void menu_special(int key, int x, int y)
 {
-    unsigned char fakekey;
     switch(key)
     {
         case 100: return menu_keyboard('a', x ,y);
@@ -1208,7 +1232,6 @@ void menu_special(int key, int x, int y)
 
 void special1(int key, int x, int y)
 {
-    unsigned char fakekey;
     switch(key)
     {
         case 100: return keyboard1('a', x ,y);
@@ -1280,9 +1303,6 @@ void display1(void)
     glLoadIdentity();
 
 
-	//
-	// Transform world coordinates into eye coordinates with gluLookAt()
-	//
     static int ballfollowed = 0;
     static int countdown = 10;
 
@@ -1323,20 +1343,18 @@ void display1(void)
 
 		if (state == cue) ballfollowed = 0;
 
-        //glRotatef(camera_angle, 0, 1, 0);
-
         if (state == cue || !running)
         {
             // manual control
-            gluLookAt( -sin(M_PI*camera_angle/180.0)*66+x, 25, -cos(M_PI*camera_angle/180.0)*66+z, 
-                        x, -5, z,
-                        0, 1, 0);
+            view = glm::lookAt( glm::dvec3(-sin(M_PI*camera_angle/180.0)*66+x, 50, -cos(M_PI*camera_angle/180.0)*66+z), 
+                        glm::dvec3(x, -5, z),
+                        glm::dvec3(0, 1, 0));
         } else
         {
             // look on
-            gluLookAt(  /* PoolTable::width/1.8 */0, 50, 0,
-                        x, -5, z,
-                        0, 1, 0);
+            view = glm::lookAt( glm::dvec3(0, 50, 0),
+                        glm::dvec3(x, -5, z),
+                        glm::dvec3(0, 1, 0));
         }
             
     } else 
@@ -1379,13 +1397,10 @@ void display1(void)
 	// Draw scene
 	//
 
-    glPushMatrix();
-    glTranslated(0, -10, 0);
+	glm::dmat4 model = glm::translate(glm::dmat4(1.0), glm::dvec3(0.0, -10.0, 0.0));
+    //glTranslated(0, -10, 0);
 
-    table->render(); // our table and balls!
-
-    glPopMatrix();
-
+    table->render(model); // our table and balls!
 
     // cue "stick"
 	// 
@@ -1401,12 +1416,6 @@ void display1(void)
 	}
 
 
-    //
-    // uh...
-    //
-
-
-
 	glPushMatrix();
 	glTranslated(light_position[0], light_position[1], light_position[2]);
     glRotatef(90, 1, 0, 0);
@@ -1419,8 +1428,6 @@ void display1(void)
 	glutWireCylinder(5, 10, 6, 1);
 	glPopMatrix();
 
-	glFlush();
-
     // text overlay stuff
     glDisable(GL_LIGHTING);
     glDisable(GL_DEPTH_TEST);
@@ -1430,7 +1437,6 @@ void display1(void)
 	glLoadIdentity();
 
     glMatrixMode(GL_PROJECTION);
-    glPushMatrix();
     glLoadIdentity();
     gluOrtho2D(0.0,(GLdouble) winWidth , 0.0,(GLdouble) winHeight);
 
@@ -1483,7 +1489,7 @@ void display1(void)
 	{
 		// draw cue power indicator
         glEnable (GL_BLEND); 
-        glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA); glErrorCheck();
         glColor4f(cue_power, 1-cue_power, 0.1, 0.7);
         glBegin(GL_TRIANGLE_FAN);
         glVertex2f(40, winHeight*0.8*cue_power);
@@ -1499,6 +1505,8 @@ void display1(void)
         glVertex2f(70, 40);
         glVertex2f(70, winHeight*0.8);
 		glEnd();
+		glDisable(GL_BLEND);
+		glErrorCheck();
 	}
 
 
@@ -1641,10 +1649,8 @@ void display1(void)
     }
 
 	displayFPSOverlay(true);
-    glMatrixMode(GL_PROJECTION);
-    glPopMatrix();
 
-    glFinish();
+    //glFinish();
     glutSwapBuffers();
 }
 
@@ -1689,14 +1695,41 @@ void load_assets()
 
 	if (!Sounds::sadwhistle) Sounds::sadwhistle = Mix_LoadWAV("data/sadwhistle.wav");
 	if (!Sounds::sadwhistle) fprintf(stderr, ":( %s \n", SDL_GetError());
+	
+	// refactor into a "load model" method or something...
+	loadOBJ("icosphere.obj", PoolBall::vertices, PoolBall::uvs, PoolBall::normals); 
+	
+	glErrorCheck();
+	
+	glGenVertexArrays(1, &PoolBall::VAO_id); glErrorCheck();
+	glBindVertexArray(PoolBall::VAO_id); glErrorCheck();
+	
+	glGenBuffers(1, &PoolBall::vertexbuffer); glErrorCheck();
+	glBindBuffer(GL_ARRAY_BUFFER, PoolBall::vertexbuffer); glErrorCheck();
+	glBufferData(GL_ARRAY_BUFFER, PoolBall::vertices.size() * sizeof(glm::vec3), &PoolBall::vertices[0], GL_STATIC_DRAW); glErrorCheck();
+	glEnableVertexAttribArray(0); glErrorCheck();
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0); glErrorCheck();
+	
+	glGenBuffers(1, &PoolBall::uvbuffer); glErrorCheck();
+	glBindBuffer(GL_ARRAY_BUFFER, PoolBall::uvbuffer); glErrorCheck();
+	glBufferData(GL_ARRAY_BUFFER, PoolBall::uvs.size() * sizeof(glm::vec3), &PoolBall::uvs[0], GL_STATIC_DRAW); glErrorCheck();
+	glEnableVertexAttribArray(1); glErrorCheck();
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, (void*)0); glErrorCheck();
+	
+	glGenBuffers(1, &PoolBall::normalbuffer);
+	glBindBuffer(GL_ARRAY_BUFFER, PoolBall::normalbuffer);
+	glBufferData(GL_ARRAY_BUFFER, PoolBall::normals.size() * sizeof(glm::vec3), &PoolBall::normals[0], GL_STATIC_DRAW);	
+	glEnableVertexAttribArray(2);
+	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+
+	program_id = LoadShaders("TransformVertexShader.vertexshader", "TextureFragmentShader.fragmentshader"); glErrorCheck();
+	MVP_id = glGetUniformLocation(program_id, "MVP"); glErrorCheck();	
 }
 
 
 // reset all the things?
 void newgame()
 {
-	load_assets();
-
 	hits = 0; // this is how we keep score
 
 	table->clear_balls();
