@@ -2,7 +2,7 @@
 
 #include <glm/glm.hpp>
 
-extern GLuint MVP_id;
+extern GLuint idMVP;
 extern GLuint program_id;
 extern glm::dmat4 perspective, view;
 

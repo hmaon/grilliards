@@ -1,8 +1,8 @@
 CC=gcc
 CXX=codelitegcc g++
-CFLAGS=-O3 -flto -g -funsigned-char -Wno-write-strings -march=native -ffast-math `pkg-config --cflags sdl SDL_mixer SDL_image glew` -Wall
+CFLAGS=-O3 -funsigned-char -Wno-write-strings -march=native -ffast-math `pkg-config --cflags sdl SDL_mixer SDL_image glew` -Wall
 CXXFLAGS=$(CFLAGS) -fno-rtti
-LDFLAGS=-lGL -lGLU -lglut `pkg-config --libs sdl SDL_mixer SDL_image glew` -flto
+LDFLAGS=-lGL -lGLU -lglut `pkg-config --libs sdl SDL_mixer SDL_image glew` 
 
 CPPSRC=$(wildcard *.cpp)
 CSRC=$(wildcard *.c)

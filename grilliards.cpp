@@ -67,11 +67,6 @@ bool normals = false;
 GLsizei winWidth = 1024, winHeight = 768;   
 
 
-// shader program id
-GLuint program_id = -1;
-
-// MVP matrix id, needed everywhere...
-GLuint MVP_id = -1;
 
 glm::dmat4 view, perspective;
 
@@ -134,6 +129,9 @@ void init (void)
 	glGetIntegerv(GL_MAX_VERTEX_ATTRIBS, &n);
 	printf("GL_MAX_VERTEX_ATTRIBS: %d\n", n);
 
+	glGetIntegerv(GL_MAX_FRAGMENT_UNIFORM_COMPONENTS, &n);
+	printf("GL_MAX_FRAGMENT_UNIFORM_COMPONENTS: %d\n", n);
+	
 	// black window
    	glClearColor (0.0, 0.0, 0.0, 1.0);
 

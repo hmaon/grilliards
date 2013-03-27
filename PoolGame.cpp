@@ -40,6 +40,13 @@ float cue_power = 1.0f;
 bool use_mass = true;
 int hits = 0;
 
+// shader program id
+GLuint idProgram = -1;
+
+// MVP matrix id, needed everywhere...
+GLuint idMVP = -1, idMV = -1, idN = -1, idTex = -1;
+
+
 PoolGameState state = intro; // pool game state? you don't say? must be the state of the pool game?
 PoolGameMode mode = amazeballs; // yep.
 
@@ -65,8 +72,8 @@ GLfloat light_position1[] = {0.0, 100.0, 85.0, 1.0};
 GLfloat nil_position[] = {0, 0, 0, 1};
 // https://en.wikipedia.org/wiki/Sunset_%28color%29
 GLfloat sunset[] = {250/255.0f, 214/255.0f, 165/255.0f, 1.0f};
-GLfloat tungsten_100w[] = {255.0f/255, 214.0f/255, 170.0f/255};
-GLfloat dim_ambiance[] = {255.0f/1024, 214.0f/1024, 170.0f/1024};
+GLfloat tungsten_100w[] = {255.0f/255, 214.0f/255, 170.0f/255, 1.0f};
+GLfloat dim_ambiance[] = {255.0f/1024, 214.0f/1024, 170.0f/1024, 1.0f};
 GLfloat mat_blue[] = {0.2f, 0.5f, 1.0f, 1.0f};
 GLfloat mat_green[] = {0.2f, 1.0f, 0.2f, 1.0f};
 GLfloat mat_black[] = {0.0f, 0.0f, 0.0f, 1.0f};
@@ -288,6 +295,15 @@ void PoolBall::render(glm::dmat4 &parent_model)
 	glm::mat4 MVP;
 	MVP << (perspective * view * model);
 
+	glm::mat4 MV;
+	MV << (view * model);
+	
+	glm::mat4 M;
+	M << model;
+	
+	glm::mat3 N(M); // normal matrix	
+	N = glm::transpose(glm::inverse(N)); // ref: http://www.arcsynthesis.org/gltut/Illumination/Tut09%20Normal%20Transformation.html	
+
 	//NaNtest(perspective);
 	//NaNtest(view);
 	//NaNtest(model);
@@ -299,10 +315,22 @@ void PoolBall::render(glm::dmat4 &parent_model)
 
 	glErrorCheck();
 	
-	glUseProgram(program_id); glErrorCheck();
+	glUseProgram(idProgram); glErrorCheck();
 
-	glUniformMatrix4fv(MVP_id, 1, 0, &MVP[0][0]); glErrorCheck();
-	glUniform1i(glGetUniformLocation(program_id, "tex_id"), 0); glErrorCheck();	
+	glUniformMatrix4fv(idMVP, 1, 0, &MVP[0][0]); glErrorCheck();
+	glUniformMatrix4fv(idMV, 1, 0, &MV[0][0]); glErrorCheck();
+	glUniformMatrix3fv(idN, 1, 0, &N[0][0]); glErrorCheck();
+	glUniform1i(idTex, 0); glErrorCheck();	
+
+	glUniform4fv(glGetUniformLocation(idProgram, "sceneColor"), 1, mat_grey); glErrorCheck();
+	glUniform1f(glGetUniformLocation(idProgram, "ambient"), 0.3f); glErrorCheck();
+	glUniform1f(glGetUniformLocation(idProgram, "diffuse"), 0.7f); glErrorCheck();
+	glUniform1f(glGetUniformLocation(idProgram, "shininess"), 0.5f); glErrorCheck();	
+	glUniform3fv(glGetUniformLocation(idProgram, "light_position[0]"), 1, light_position); glErrorCheck();
+	glUniform4fv(glGetUniformLocation(idProgram, "light_ambient[0]"), 1, dim_ambiance); glErrorCheck();
+	glUniform4fv(glGetUniformLocation(idProgram, "light_diffuse[0]"), 1, tungsten_100w); glErrorCheck();
+	glUniform4fv(glGetUniformLocation(idProgram, "light_specular[0]"), 1, sunset); glErrorCheck();
+	
 		
 	glBindVertexArray(VAO_id); glErrorCheck();
 
@@ -1346,7 +1374,7 @@ void display1(void)
         if (state == cue || !running)
         {
             // manual control
-            view = glm::lookAt( glm::dvec3(-sin(M_PI*camera_angle/180.0)*66+x, 50, -cos(M_PI*camera_angle/180.0)*66+z), 
+            view = glm::lookAt( glm::dvec3(-sin(M_PI*camera_angle/180.0)*66+x, 25, -cos(M_PI*camera_angle/180.0)*66+z), 
                         glm::dvec3(x, -5, z),
                         glm::dvec3(0, 1, 0));
         } else
@@ -1722,8 +1750,11 @@ void load_assets()
 	glEnableVertexAttribArray(2);
 	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
 
-	program_id = LoadShaders("TransformVertexShader.vertexshader", "TextureFragmentShader.fragmentshader"); glErrorCheck();
-	MVP_id = glGetUniformLocation(program_id, "MVP"); glErrorCheck();	
+	idProgram = LoadShaders("Fixed.vert", "TextureFragmentShader.fragmentshader"); glErrorCheck();
+	idMVP = glGetUniformLocation(idProgram, "MVP"); glErrorCheck();	
+	idMV = glGetUniformLocation(idProgram, "MV"); glErrorCheck();	
+	idN = glGetUniformLocation(idProgram, "N"); glErrorCheck();	
+	idTex = glGetUniformLocation(idProgram, "tex_id"); glErrorCheck();	
 }
 
 
