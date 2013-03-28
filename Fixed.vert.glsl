@@ -11,6 +11,7 @@ out vec4 color_part;
 
 flat out vec3 lightVec_viewspace; // TODO: change to array
 out vec3 normal_viewspace;
+out vec3 normal_modelspace;
 out vec3 reflectVec_viewspace; // uh, not sure whether it's valid to interpolate this...
 
 // Values that stay constant for the whole mesh.
@@ -134,6 +135,7 @@ void directionalLight(in int i, in vec3 normal)
 #else
    lightVec_viewspace = lightVec;
    normal_viewspace = normal;
+   reflectVec_viewspace = R;
 #endif
    Ambient  += light_ambient[i];
    Diffuse  += light_diffuse[i] * nDotVP;
@@ -143,6 +145,7 @@ void directionalLight(in int i, in vec3 normal)
 
 vec3 fnormal(void)
 {
+	normal_modelspace = vertexNormal_modelspace;
     //Compute the normal 
     vec3 normal = N * vertexNormal_modelspace;
     // vec3 normal = (MV * vec4(vertexNormal_modelspace, 0)).xyz; // not compatible with non-uniform scaling!

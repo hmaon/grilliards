@@ -5,6 +5,8 @@ in vec2 UV;
 in vec4 color_part;
 
 in vec3 normal_viewspace;
+in vec3 normal_modelspace;
+in vec3 reflectVec_viewspace;
 flat in vec3 lightVec_viewspace;
 
 // Ouput data
@@ -25,7 +27,8 @@ void main(){
 	// Eye vector (towards the camera)
 	vec3 E = vec3(0.0, 0.0, 1.0);
 	// Direction in which the triangle reflects the light
-	vec3 R = reflect( -lightVec_viewspace, normalize(normal_viewspace) );
+	//vec3 R = reflect( -lightVec_viewspace, normalize(normal_viewspace) );
+	vec3 R = normalize(reflectVec_viewspace);
 	// Cosine of the angle between the Eye vector and the Reflect vector,
 	// clamped to 0
 	//  - Looking into the reflection -> 1
@@ -37,10 +40,12 @@ void main(){
 	// Output color = color of the texture at the specified UV
 	c += light_specular[0] * pf;
 	c *= texture2D( tex_id, UV );
+	//vec3 norm = normalize(normal_modelspace);
+	//float v = norm.x / sqrt( 2 * ( 1 + norm.z ) ); 
+	//float u = norm.y / sqrt( 2 * ( 1 + norm.z ) );
+	//c *= texture2D(tex_id, vec2(u,v));
 
 	c = max(c, light_specular[0] * pf);
 
 	color = clamp(c, 0, 1).rgb;
-
-	//color = white;
 }

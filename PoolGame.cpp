@@ -31,6 +31,25 @@
 namespace PoolGame
 {
 
+// various constants, kind of ad-hoc
+const GLfloat mat_white[] = {1.0, 1.0, 1.0, 1.0};
+const GLfloat light_position[] = {0.0, 100.0, 0.0, 1.0};
+//GLfloat light_position[] = {0.0, 20.0, 0.0, 1.0};
+const GLfloat light_position1[] = {0.0, 100.0, 0, 1.0};
+const GLfloat nil_position[] = {0, 0, 0, 1};
+// https://en.wikipedia.org/wiki/Sunset_%28color%29
+const GLfloat sunset[] = {250/255.0f, 214/255.0f, 165/255.0f, 1.0f};
+const GLfloat tungsten_100w[] = {255.0f/255, 214.0f/255, 170.0f/255, 1.0f};
+//GLfloat dim_ambiance[] = {255.0f/1024, 214.0f/1024, 170.0f/1024, 1.0f};
+const GLfloat dim_ambiance[] = {255.0f/255, 214.0f/255, 170.0f/255, 1.0f};
+const GLfloat mat_blue[] = {0.2f, 0.5f, 1.0f, 1.0f};
+const GLfloat mat_green[] = {0.2f, 1.0f, 0.2f, 1.0f};
+const GLfloat mat_black[] = {0.0f, 0.0f, 0.0f, 1.0f};
+const GLfloat mat_grey[] = {0.33f, 0.33f, 0.33f, 1.0f};
+// GLfloat mat_shininess[] = {66.0f};
+
+const GLfloat v_down[] = {0, -1, 0};
+
 // PoolGame global variables
 PoolTable *table = NULL;
 bool chasecam = false;
@@ -64,26 +83,6 @@ Mix_Chunk *squirble = NULL;
 Mix_Chunk *sadwhistle = NULL;
 };
 
-// some file-global stuff
-// I seem to have trouble initializing arrays as static class members
-// so now they're just global variables. *shrug*
-GLfloat mat_white[] = {1.0, 1.0, 1.0, 1.0};
-GLfloat light_position[] = {0.0, 100.0, 0, 1.0};
-//GLfloat light_position[] = {0.0, 20.0, 0.0, 1.0};
-GLfloat light_position1[] = {0.0, 100.0, 0, 1.0};
-GLfloat nil_position[] = {0, 0, 0, 1};
-// https://en.wikipedia.org/wiki/Sunset_%28color%29
-GLfloat sunset[] = {250/255.0f, 214/255.0f, 165/255.0f, 1.0f};
-GLfloat tungsten_100w[] = {255.0f/255, 214.0f/255, 170.0f/255, 1.0f};
-//GLfloat dim_ambiance[] = {255.0f/1024, 214.0f/1024, 170.0f/1024, 1.0f};
-GLfloat dim_ambiance[] = {255.0f/255, 214.0f/255, 170.0f/255, 1.0f};
-GLfloat mat_blue[] = {0.2f, 0.5f, 1.0f, 1.0f};
-GLfloat mat_green[] = {0.2f, 1.0f, 0.2f, 1.0f};
-GLfloat mat_black[] = {0.0f, 0.0f, 0.0f, 1.0f};
-GLfloat mat_grey[] = {0.33f, 0.33f, 0.33f, 1.0f};
-// GLfloat mat_shininess[] = {66.0f};
-
-GLfloat v_down[] = {0, -1, 0};
 
 
 typedef struct BallInfos_struct
@@ -291,6 +290,8 @@ void PoolBall::render(glm::dmat4 &parent_model)
 	{
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, tex);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);		
 	}
 
 	glm::dmat4 model = parent_model * glm::translate(glm::dmat4(1.0), glm::dvec3(x, diameter/2, z)) * rotation * glm::scale(glm::dmat4(1.0), glm::dvec3(diameter/2, diameter/2, diameter/2));
