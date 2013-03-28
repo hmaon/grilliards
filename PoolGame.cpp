@@ -39,6 +39,7 @@ float cue_angle = 270;
 float cue_power = 1.0f;
 bool use_mass = true;
 int hits = 0;
+glm::vec3 eye;
 
 // shader program id
 GLuint idProgram = -1;
@@ -68,6 +69,7 @@ Mix_Chunk *sadwhistle = NULL;
 // so now they're just global variables. *shrug*
 GLfloat mat_white[] = {1.0, 1.0, 1.0, 1.0};
 GLfloat light_position[] = {0.0, 100.0, -85.0, 1.0};
+//GLfloat light_position[] = {0.0, 20.0, 0.0, 1.0};
 GLfloat light_position1[] = {0.0, 100.0, 85.0, 1.0};
 GLfloat nil_position[] = {0, 0, 0, 1};
 // https://en.wikipedia.org/wiki/Sunset_%28color%29
@@ -301,7 +303,10 @@ void PoolBall::render(glm::dmat4 &parent_model)
 	glm::mat4 M;
 	M << model;
 	
-	glm::mat3 N(M); // normal matrix	
+	glm::mat4 V;
+	V << view;
+	
+	glm::mat3 N(V * M); // normal matrix	
 	N = glm::transpose(glm::inverse(N)); // ref: http://www.arcsynthesis.org/gltut/Illumination/Tut09%20Normal%20Transformation.html	
 
 	//NaNtest(perspective);
@@ -322,14 +327,19 @@ void PoolBall::render(glm::dmat4 &parent_model)
 	glUniformMatrix3fv(idN, 1, 0, &N[0][0]); glErrorCheck();
 	glUniform1i(idTex, 0); glErrorCheck();	
 
-	glUniform4fv(glGetUniformLocation(idProgram, "sceneColor"), 1, mat_grey); glErrorCheck();
-	glUniform1f(glGetUniformLocation(idProgram, "ambient"), 0.3f); glErrorCheck();
+	glUniformMatrix4fv(glGetUniformLocation(idProgram, "M"), 1, 0, &M[0][0]); glErrorCheck();
+	glUniformMatrix4fv(glGetUniformLocation(idProgram, "V"), 1, 0, &V[0][0]); glErrorCheck();
+
+	glUniform4fv(glGetUniformLocation(idProgram, "sceneColor"), 1, mat_black); glErrorCheck();
+	glUniform1f(glGetUniformLocation(idProgram, "ambient"), 1.0f); glErrorCheck();
 	glUniform1f(glGetUniformLocation(idProgram, "diffuse"), 0.7f); glErrorCheck();
-	glUniform1f(glGetUniformLocation(idProgram, "shininess"), 0.5f); glErrorCheck();	
-	glUniform3fv(glGetUniformLocation(idProgram, "light_position[0]"), 1, light_position); glErrorCheck();
+	glUniform1i(glGetUniformLocation(idProgram, "shininess"), 66); glErrorCheck();
+	glUniform1f(glGetUniformLocation(idProgram, "specular"), 1.0f); glErrorCheck();
+	glUniform4fv(glGetUniformLocation(idProgram, "lightPosition_worldspace[0]"), 1, light_position); glErrorCheck();
 	glUniform4fv(glGetUniformLocation(idProgram, "light_ambient[0]"), 1, dim_ambiance); glErrorCheck();
 	glUniform4fv(glGetUniformLocation(idProgram, "light_diffuse[0]"), 1, tungsten_100w); glErrorCheck();
-	glUniform4fv(glGetUniformLocation(idProgram, "light_specular[0]"), 1, sunset); glErrorCheck();
+	glUniform4fv(glGetUniformLocation(idProgram, "light_specular[0]"), 1, mat_white); glErrorCheck();
+	glUniform3fv(glGetUniformLocation(idProgram, "eye_position"), 1, &eye[0]); glErrorCheck();
 	
 		
 	glBindVertexArray(VAO_id); glErrorCheck();
@@ -347,7 +357,34 @@ void PoolBall::render(glm::dmat4 &parent_model)
 	//glDisableVertexAttribArray(1);
 	//glDisableVertexAttribArray(2);
 	
+	//glBindAttribLocation(idProgram, 0, "vertexPosition_modelspace"); glErrorCheck();
 	glUseProgram(0); glErrorCheck();
+	
+	glMatrixMode(GL_MODELVIEW);
+	glLoadIdentity();
+	glMultMatrixd(&view[0][0]);
+	glMultMatrixd(&parent_model[0][0]);
+	glMatrixMode(GL_PROJECTION);
+	//glLoadIdentity();
+extern double wide_view[];	
+	//gluLookAt(eye[0], eye[1], eye[2], wide_view[3], wide_view[4], wide_view[5], 0, 1, 0);
+	glLoadMatrixd(&perspective[0][0]);
+	
+	glBegin(GL_LINES);
+#if 1
+	glVertex4f(x, 0, z, 1.0f);
+	glVertex4f(light_position[0], light_position[1], light_position[2], 1.0f);
+#endif
+	
+#if 0
+	for (int i = 0; i < vertices.size(); ++i)
+	{
+		glVertex3f(vertices[i][0], vertices[i][1], vertices[i][2]);
+		glVertex3f(vertices[i][0] + normals[i][0], vertices[i][1] + normals[i][1], vertices[i][2] + normals[i][2]);
+	}
+#endif
+	glEnd(); glErrorCheck();
+	
 	
 	glDisable(GL_TEXTURE_2D);
 }
@@ -1374,20 +1411,23 @@ void display1(void)
         if (state == cue || !running)
         {
             // manual control
-            view = glm::lookAt( glm::dvec3(-sin(M_PI*camera_angle/180.0)*66+x, 25, -cos(M_PI*camera_angle/180.0)*66+z), 
-                        glm::dvec3(x, -5, z),
-                        glm::dvec3(0, 1, 0));
+			eye = glm::vec3(-sin(M_PI*camera_angle/180.0)*66+x, 25, -cos(M_PI*camera_angle/180.0)*66+z);
+            view = glm::lookAt(eye, 
+                        glm::vec3(x, -5, z),
+                        glm::vec3(0, 1, 0));
         } else
         {
             // look on
-            view = glm::lookAt( glm::dvec3(0, 50, 0),
-                        glm::dvec3(x, -5, z),
-                        glm::dvec3(0, 1, 0));
+			eye = glm::vec3(0, 50, 0);
+            view = glm::lookAt( eye,
+                        glm::vec3(x, -5, z),
+                        glm::vec3(0, 1, 0));
         }
             
     } else 
     {
 
+		eye = glm::vec3(wide_view[0], wide_view[1], wide_view[2]);
 		look_at(wide_view);
         if (state == intro || state == over || state == menu)
         {
@@ -1726,6 +1766,7 @@ void load_assets()
 	
 	// refactor into a "load model" method or something...
 	loadOBJ("icosphere.obj", PoolBall::vertices, PoolBall::uvs, PoolBall::normals); 
+	//loadOBJ("cube.obj", PoolBall::vertices, PoolBall::uvs, PoolBall::normals); 
 	
 	glErrorCheck();
 	
@@ -1750,11 +1791,11 @@ void load_assets()
 	glEnableVertexAttribArray(2);
 	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
 
-	idProgram = LoadShaders("Fixed.vert", "TextureFragmentShader.fragmentshader"); glErrorCheck();
+	idProgram = LoadShaders("Fixed.vert.glsl", "TextureFragmentShader.glsl"); glErrorCheck();
 	idMVP = glGetUniformLocation(idProgram, "MVP"); glErrorCheck();	
 	idMV = glGetUniformLocation(idProgram, "MV"); glErrorCheck();	
 	idN = glGetUniformLocation(idProgram, "N"); glErrorCheck();	
-	idTex = glGetUniformLocation(idProgram, "tex_id"); glErrorCheck();	
+	idTex = glGetUniformLocation(idProgram, "tex_id"); glErrorCheck();
 }
 
 

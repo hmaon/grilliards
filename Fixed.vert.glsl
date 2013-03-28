@@ -3,7 +3,7 @@
 // Input vertex data, different for all executions of this shader.
 layout(location = 0) in vec3 vertexPosition_modelspace;
 layout(location = 1) in vec2 vertexUV;
-layout(location = 2) in vec3 normal;
+layout(location = 2) in vec3 vertexNormal_modelspace;
 
 // Output data ; will be interpolated for each fragment.
 out vec2 UV;
@@ -12,9 +12,11 @@ out vec4 color_part;
 // Values that stay constant for the whole mesh.
 uniform mat4 MVP;
 uniform mat4 MV;
+uniform mat4 M;
+uniform mat4 V;
 uniform mat3 N; // normal matrix
 
-uniform vec3 light_position[2];
+uniform vec4 LightPosition_worldspace[2];
 uniform float light_constantAttenuation[2];
 uniform float light_linearAttenuation[2];
 uniform float light_quadraticAttenuation[2];
@@ -22,12 +24,13 @@ uniform vec4 light_ambient[2];
 uniform vec4 light_diffuse[2];
 uniform vec4 light_specular[2];
 
-uniform float shininess;
+uniform int shininess;
 uniform vec4 sceneColor;
 uniform float ambient;
 uniform float diffuse;
 uniform float specular;
 
+uniform vec3 eye_position;;
 
 ///*******************************************************
 //*  Fixed.vert Fixed Function Equivalent Vertex Shader  *
@@ -38,7 +41,7 @@ vec4 Ambient;
 vec4 Diffuse;
 vec4 Specular;
 
-
+/*
 void pointLight(in int i, in vec3 normal, in vec3 eye, in vec3 ecPosition3)
 {
    float nDotVP;       // normal . light direction
@@ -49,8 +52,12 @@ void pointLight(in int i, in vec3 normal, in vec3 eye, in vec3 ecPosition3)
    vec3  VP;           // direction from surface to light position
    vec3  halfVector;   // direction of maximum highlights
 
+   //float derp = max(0.0, dot(normal, -ecPosition3));
+   //Diffuse += light_diffuse[i] * derp;
+   //return;
+
    // Compute vector from surface to light position
-   VP = vec3(light_position[i]) - ecPosition3;
+   VP = vec3(V * LightPosition_worldspace[i]) - ecPosition3;
 
    // Compute distance between surface and light position
    d = length(VP);
@@ -80,20 +87,25 @@ void pointLight(in int i, in vec3 normal, in vec3 eye, in vec3 ecPosition3)
        pf = pow(nDotHV, shininess);
 
    }
-   Ambient  += light_ambient[i] * attenuation;
+   //Ambient  += light_ambient[i] * attenuation;
    Diffuse  += light_diffuse[i] * nDotVP * attenuation;
    Specular += light_specular[i] * pf * attenuation;
 }
+*/
 
-/*
+
 void directionalLight(in int i, in vec3 normal)
 {
    float nDotVP;         // normal . light direction
    float nDotHV;         // normal . light half vector
    float pf;             // power factor
 
-   nDotVP = max(0.0, dot(normal, normalize(vec3 (light_.position))))[i];
-   nDotHV = max(0.0, dot(normal, vec3 (light_.halfVector)))[i];
+   vec4 lightPos = LightPosition_worldspace[i];
+   lightPos.w = 0.0;
+
+   nDotVP = max(0.0, dot(normal, normalize(vec3 (V * lightPos))));
+   //nDotHV = max(0.0, dot(normal, vec3 (light_.halfVector)))[i];
+   nDotHV = max(0.0, dot(normal, vec3 (0.0, 1.0, 0.0)));
 
    if (nDotVP == 0.0)
    {
@@ -104,16 +116,18 @@ void directionalLight(in int i, in vec3 normal)
        pf = pow(nDotHV, shininess);
 
    }
-   Ambient  += light_.ambient[i];
-   Diffuse  += light_.diffuse[i] * nDotVP;
-   Specular += light_.specular[i] * pf;
+   Ambient  += light_ambient[i];
+   Diffuse  += light_diffuse[i] * nDotVP;
+   Specular += light_specular[i] * pf;
 }
-*/
+
 
 vec3 fnormal(void)
 {
     //Compute the normal 
-    vec3 normal = N * normal;
+    //vec3 normal = N * vertexNormal_modelspace;
+    // vec3 normal = (MV * vec4(vertexNormal_modelspace, 0)).xyz; // not compatible with non-uniform scaling!
+    vec3 normal = (mat3(MV) * vertexNormal_modelspace).xyz; // not compatible with non-uniform scaling!
     normal = normalize(normal);
     return normal;
 }
@@ -129,7 +143,7 @@ void ftexgen(in vec3 normal, in vec4 ecPosition)
 }
 */
 
-void flight(in vec3 normal, in vec4 ecPosition, float alphaFade)
+void light(in vec3 normal, in vec4 ecPosition, float alphaFade)
 {
     vec4 color;
     vec3 ecPosition3;
@@ -143,11 +157,11 @@ void flight(in vec3 normal, in vec4 ecPosition, float alphaFade)
     Diffuse  = vec4 (0.0);
     Specular = vec4 (0.0);
 
-    pointLight(0, normal, eye, ecPosition3);
+    //pointLight(0, normal, eye, ecPosition3);
 
     //pointLight(1, normal, eye, ecPosition3);
 
-    //directionalLight(2, normal);
+    directionalLight(0, normal);
 
     color = sceneColor +
       Ambient  * ambient +
@@ -167,9 +181,9 @@ void main (void)
     vec4 ecPosition = MV * vec4(vertexPosition_modelspace,1);
 
     // Do fixed functionality vertex transform
-    gl_Position = MVP * vec4(vertexPosition_modelspace,1);
     transformedNormal = fnormal();
-    flight(transformedNormal, ecPosition, alphaFade);
+    light(transformedNormal, ecPosition, alphaFade);
     //ftexgen(transformedNormal, ecPosition);
+    gl_Position = MVP * vec4(vertexPosition_modelspace,1);
 	UV = vertexUV;
 }

@@ -458,7 +458,7 @@ int main (int argc, char** argv)
 
     glutInitDisplayMode (GLUT_DOUBLE | GLUT_RGB);
     // Set initial Window position
-    glutInitWindowPosition (100, 100);
+    //glutInitWindowPosition (100, 100);
     // Set Window Size
     glutInitWindowSize (winWidth, winHeight);
     // Set Window Title
