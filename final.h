@@ -73,6 +73,7 @@ const char *strGLError(GLenum glErr);
         { \
             printf("%s:%d %s %s\n", __FILE__, __LINE__, ": glGetError() complaint: ", strGLError(glErr));\
         } while (((glErr = glGetError()) != GL_NO_ERROR));\
+		exit(1);\
     }\
 }
 

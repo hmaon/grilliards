@@ -9,6 +9,10 @@ layout(location = 2) in vec3 vertexNormal_modelspace;
 out vec2 UV;
 out vec4 color_part;
 
+flat out vec3 lightVec_viewspace; // TODO: change to array
+out vec3 normal_viewspace;
+out vec3 reflectVec_viewspace; // uh, not sure whether it's valid to interpolate this...
+
 // Values that stay constant for the whole mesh.
 uniform mat4 MVP;
 uniform mat4 MV;
@@ -16,7 +20,7 @@ uniform mat4 M;
 uniform mat4 V;
 uniform mat3 N; // normal matrix
 
-uniform vec4 LightPosition_worldspace[2];
+uniform vec4 lightPosition_worldspace[2];
 uniform float light_constantAttenuation[2];
 uniform float light_linearAttenuation[2];
 uniform float light_quadraticAttenuation[2];
@@ -41,7 +45,7 @@ vec4 Ambient;
 vec4 Diffuse;
 vec4 Specular;
 
-/*
+
 void pointLight(in int i, in vec3 normal, in vec3 eye, in vec3 ecPosition3)
 {
    float nDotVP;       // normal . light direction
@@ -57,7 +61,7 @@ void pointLight(in int i, in vec3 normal, in vec3 eye, in vec3 ecPosition3)
    //return;
 
    // Compute vector from surface to light position
-   VP = vec3(V * LightPosition_worldspace[i]) - ecPosition3;
+   VP = vec3(V * lightPosition_worldspace[i]) - ecPosition3;
 
    // Compute distance between surface and light position
    d = length(VP);
@@ -71,7 +75,7 @@ void pointLight(in int i, in vec3 normal, in vec3 eye, in vec3 ecPosition3)
        light_linearAttenuation[i] * d +
        light_quadraticAttenuation[i] * d * d);
 #endif
-   attenuation = 1.0;
+   attenuation = 1.0 / (light_quadraticAttenuation[i] * d * d);
 
    halfVector = normalize(VP + eye);
 
@@ -87,25 +91,36 @@ void pointLight(in int i, in vec3 normal, in vec3 eye, in vec3 ecPosition3)
        pf = pow(nDotHV, shininess);
 
    }
-   //Ambient  += light_ambient[i] * attenuation;
+   Ambient  += light_ambient[i] * attenuation;
    Diffuse  += light_diffuse[i] * nDotVP * attenuation;
    Specular += light_specular[i] * pf * attenuation;
 }
-*/
+
 
 
 void directionalLight(in int i, in vec3 normal)
 {
    float nDotVP;         // normal . light direction
-   float nDotHV;         // normal . light half vector
+   //float nDotHV;         // normal . light half vector
    float pf;             // power factor
 
-   vec4 lightPos = LightPosition_worldspace[i];
-   lightPos.w = 0.0;
+   vec3 lightVec =  normalize( vec3(V * lightPosition_worldspace[i]) );
 
-   nDotVP = max(0.0, dot(normal, normalize(vec3 (V * lightPos))));
+   nDotVP = max( 0.0, dot(normal, lightVec) );
+
+   // Eye vector (towards the camera)
+   vec3 E = vec3(0.0, 0.0, 1.0);
+   // Direction in which the triangle reflects the light
+   vec3 R = reflect(-lightVec, normal);
+   // Cosine of the angle between the Eye vector and the Reflect vector,
+   // clamped to 0
+   //  - Looking into the reflection -> 1
+   //  - Looking elsewhere -> < 1
+#if 0
+   float cosAlpha = clamp( dot(E, R), 0, 1 );
+
    //nDotHV = max(0.0, dot(normal, vec3 (light_.halfVector)))[i];
-   nDotHV = max(0.0, dot(normal, vec3 (0.0, 1.0, 0.0)));
+   //nDotHV = max(0.0, dot(normal, vec3 (V * vec4(0.0, 1.0, 0.0, 0.0))));
 
    if (nDotVP == 0.0)
    {
@@ -113,21 +128,24 @@ void directionalLight(in int i, in vec3 normal)
    }
    else
    {
-       pf = pow(nDotHV, shininess);
-
+       pf = pow(cosAlpha, shininess);
    }
+   Specular += light_specular[i] * pf;
+#else
+   lightVec_viewspace = lightVec;
+   normal_viewspace = normal;
+#endif
    Ambient  += light_ambient[i];
    Diffuse  += light_diffuse[i] * nDotVP;
-   Specular += light_specular[i] * pf;
+
 }
 
 
 vec3 fnormal(void)
 {
     //Compute the normal 
-    //vec3 normal = N * vertexNormal_modelspace;
+    vec3 normal = N * vertexNormal_modelspace;
     // vec3 normal = (MV * vec4(vertexNormal_modelspace, 0)).xyz; // not compatible with non-uniform scaling!
-    vec3 normal = (mat3(MV) * vertexNormal_modelspace).xyz; // not compatible with non-uniform scaling!
     normal = normalize(normal);
     return normal;
 }
@@ -166,8 +184,8 @@ void light(in vec3 normal, in vec4 ecPosition, float alphaFade)
     color = sceneColor +
       Ambient  * ambient +
       Diffuse  * diffuse;
-    color += Specular * specular;
-    color = clamp( color, 0.0, 1.0 );
+    //color += Specular * specular;
+    //color = clamp( color, 0.0, 1.1 );
     color_part = color;
 }
 

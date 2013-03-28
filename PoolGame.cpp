@@ -68,14 +68,15 @@ Mix_Chunk *sadwhistle = NULL;
 // I seem to have trouble initializing arrays as static class members
 // so now they're just global variables. *shrug*
 GLfloat mat_white[] = {1.0, 1.0, 1.0, 1.0};
-GLfloat light_position[] = {0.0, 100.0, -85.0, 1.0};
+GLfloat light_position[] = {0.0, 100.0, 0, 1.0};
 //GLfloat light_position[] = {0.0, 20.0, 0.0, 1.0};
-GLfloat light_position1[] = {0.0, 100.0, 85.0, 1.0};
+GLfloat light_position1[] = {0.0, 100.0, 0, 1.0};
 GLfloat nil_position[] = {0, 0, 0, 1};
 // https://en.wikipedia.org/wiki/Sunset_%28color%29
 GLfloat sunset[] = {250/255.0f, 214/255.0f, 165/255.0f, 1.0f};
 GLfloat tungsten_100w[] = {255.0f/255, 214.0f/255, 170.0f/255, 1.0f};
-GLfloat dim_ambiance[] = {255.0f/1024, 214.0f/1024, 170.0f/1024, 1.0f};
+//GLfloat dim_ambiance[] = {255.0f/1024, 214.0f/1024, 170.0f/1024, 1.0f};
+GLfloat dim_ambiance[] = {255.0f/255, 214.0f/255, 170.0f/255, 1.0f};
 GLfloat mat_blue[] = {0.2f, 0.5f, 1.0f, 1.0f};
 GLfloat mat_green[] = {0.2f, 1.0f, 0.2f, 1.0f};
 GLfloat mat_black[] = {0.0f, 0.0f, 0.0f, 1.0f};
@@ -331,14 +332,15 @@ void PoolBall::render(glm::dmat4 &parent_model)
 	glUniformMatrix4fv(glGetUniformLocation(idProgram, "V"), 1, 0, &V[0][0]); glErrorCheck();
 
 	glUniform4fv(glGetUniformLocation(idProgram, "sceneColor"), 1, mat_black); glErrorCheck();
-	glUniform1f(glGetUniformLocation(idProgram, "ambient"), 1.0f); glErrorCheck();
+	glUniform1f(glGetUniformLocation(idProgram, "ambient"), 0.3f); glErrorCheck();
 	glUniform1f(glGetUniformLocation(idProgram, "diffuse"), 0.7f); glErrorCheck();
-	glUniform1i(glGetUniformLocation(idProgram, "shininess"), 66); glErrorCheck();
+	glUniform1i(glGetUniformLocation(idProgram, "shininess"), 115); glErrorCheck();
 	glUniform1f(glGetUniformLocation(idProgram, "specular"), 1.0f); glErrorCheck();
 	glUniform4fv(glGetUniformLocation(idProgram, "lightPosition_worldspace[0]"), 1, light_position); glErrorCheck();
 	glUniform4fv(glGetUniformLocation(idProgram, "light_ambient[0]"), 1, dim_ambiance); glErrorCheck();
 	glUniform4fv(glGetUniformLocation(idProgram, "light_diffuse[0]"), 1, tungsten_100w); glErrorCheck();
-	glUniform4fv(glGetUniformLocation(idProgram, "light_specular[0]"), 1, mat_white); glErrorCheck();
+	glUniform4fv(glGetUniformLocation(idProgram, "light_specular[0]"), 1, tungsten_100w); glErrorCheck();
+	glUniform1f(glGetUniformLocation(idProgram, "light_quadraticAttenuation[0]"), 0.1f); glErrorCheck();
 	glUniform3fv(glGetUniformLocation(idProgram, "eye_position"), 1, &eye[0]); glErrorCheck();
 	
 		
@@ -370,6 +372,7 @@ extern double wide_view[];
 	//gluLookAt(eye[0], eye[1], eye[2], wide_view[3], wide_view[4], wide_view[5], 0, 1, 0);
 	glLoadMatrixd(&perspective[0][0]);
 	
+	glEnable(GL_DEPTH_TEST);
 	glBegin(GL_LINES);
 #if 1
 	glVertex4f(x, 0, z, 1.0f);
@@ -1781,7 +1784,7 @@ void load_assets()
 	
 	glGenBuffers(1, &PoolBall::uvbuffer); glErrorCheck();
 	glBindBuffer(GL_ARRAY_BUFFER, PoolBall::uvbuffer); glErrorCheck();
-	glBufferData(GL_ARRAY_BUFFER, PoolBall::uvs.size() * sizeof(glm::vec3), &PoolBall::uvs[0], GL_STATIC_DRAW); glErrorCheck();
+	glBufferData(GL_ARRAY_BUFFER, PoolBall::uvs.size() * sizeof(glm::vec2), &PoolBall::uvs[0], GL_STATIC_DRAW); glErrorCheck();
 	glEnableVertexAttribArray(1); glErrorCheck();
 	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, (void*)0); glErrorCheck();
 	

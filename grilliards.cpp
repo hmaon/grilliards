@@ -74,7 +74,7 @@ void NaNtest(glm::dmat4 &m)
 {
 	for (int y = 0; y < 4; ++y)
 		for (int x = 0; x < 4; ++x)
-			if (m[y][x] == NAN)
+			if (glm::isnan(m[y][x]))
 				puts("NAN! :(");
 }
 
