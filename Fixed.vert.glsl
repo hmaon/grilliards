@@ -1,5 +1,9 @@
 #version 330 core
 
+
+#undef FLAT_SHADING
+
+
 // Input vertex data, different for all executions of this shader.
 layout(location = 0) in vec3 vertexPosition_modelspace;
 layout(location = 1) in vec2 vertexUV;
@@ -7,12 +11,14 @@ layout(location = 2) in vec3 vertexNormal_modelspace;
 
 // Output data ; will be interpolated for each fragment.
 out vec2 UV;
-out vec4 color_part;
+#ifdef FLAT_SHADING
+out vec4 color_part; // all colors will be computed in fragment shader
+#endif
 
-flat out vec3 lightVec_viewspace; // TODO: change to array
+flat out vec3 lightVec_viewspace[2];
 out vec3 normal_viewspace;
 out vec3 normal_modelspace;
-out vec3 reflectVec_viewspace; // uh, not sure whether it's valid to interpolate this...
+out vec3 reflectVec_viewspace[2]; // not sure whether it's valid to interpolate this... if it introduces an error, it is imperceptible so far
 
 // Values that stay constant for the whole mesh.
 uniform mat4 MVP;
@@ -97,8 +103,6 @@ void pointLight(in int i, in vec3 normal, in vec3 eye, in vec3 ecPosition3)
    Specular += light_specular[i] * pf * attenuation;
 }
 
-
-
 void directionalLight(in int i, in vec3 normal)
 {
    float nDotVP;         // normal . light direction
@@ -107,7 +111,9 @@ void directionalLight(in int i, in vec3 normal)
 
    vec3 lightVec =  normalize( vec3(V * lightPosition_worldspace[i]) );
 
+#ifdef FLAT_SHADING
    nDotVP = max( 0.0, dot(normal, lightVec) );
+#endif
 
    // Eye vector (towards the camera)
    vec3 E = vec3(0.0, 0.0, 1.0);
@@ -117,7 +123,7 @@ void directionalLight(in int i, in vec3 normal)
    // clamped to 0
    //  - Looking into the reflection -> 1
    //  - Looking elsewhere -> < 1
-#if 0
+#ifdef FLAT_SHADING
    float cosAlpha = clamp( dot(E, R), 0, 1 );
 
    //nDotHV = max(0.0, dot(normal, vec3 (light_.halfVector)))[i];
@@ -132,13 +138,13 @@ void directionalLight(in int i, in vec3 normal)
        pf = pow(cosAlpha, shininess);
    }
    Specular += light_specular[i] * pf;
+   Diffuse  += light_diffuse[i] * nDotVP;
 #else
-   lightVec_viewspace = lightVec;
-   normal_viewspace = normal;
-   reflectVec_viewspace = R;
+   lightVec_viewspace[i] = lightVec;
+   reflectVec_viewspace[i] = R;
 #endif
    Ambient  += light_ambient[i];
-   Diffuse  += light_diffuse[i] * nDotVP;
+
 
 }
 
@@ -146,10 +152,14 @@ void directionalLight(in int i, in vec3 normal)
 vec3 fnormal(void)
 {
 	normal_modelspace = vertexNormal_modelspace;
-    //Compute the normal 
+    // Compute the normal 
     vec3 normal = N * vertexNormal_modelspace;
     // vec3 normal = (MV * vec4(vertexNormal_modelspace, 0)).xyz; // not compatible with non-uniform scaling!
     normal = normalize(normal);
+
+	// pass it on to the fragment shader:
+	normal_viewspace = normal;
+
     return normal;
 }
 
@@ -184,12 +194,14 @@ void light(in vec3 normal, in vec4 ecPosition, float alphaFade)
 
     directionalLight(0, normal);
 
+#ifdef FLAT_SHADING
     color = sceneColor +
       Ambient  * ambient +
       Diffuse  * diffuse;
-    //color += Specular * specular;
-    //color = clamp( color, 0.0, 1.1 );
+    color += Specular * specular;
+    color = clamp( color, 0.0, 1.1 );
     color_part = color;
+#endif
 }
 
 
