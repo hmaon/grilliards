@@ -16,14 +16,17 @@
     <ClCompile Include="physfsrwops.c" />
     <ClCompile Include="poolgame.cpp" />
     <ClCompile Include="shader.cpp" />
+    <ClCompile Include="SimpleMesh.cpp" />
     <ClCompile Include="vboindexer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="final.h" />
     <ClInclude Include="objloader.hpp" />
     <ClInclude Include="physfsrwops.h" />
+    <ClInclude Include="PoolBall.h" />
     <ClInclude Include="PoolGame.h" />
     <ClInclude Include="shader.hpp" />
+    <ClInclude Include="SimpleMesh.h" />
     <ClInclude Include="vboindexer.hpp" />
   </ItemGroup>
   <ItemGroup>
@@ -92,18 +95,18 @@
       <PrecompiledHeader>
       </PrecompiledHeader>
       <Optimization>MaxSpeed</Optimization>
-      <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>freeglut\include;SDL\include;SDL_mixer\include;SDL_image\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.;glew-1.9.0\include;glew-1.9.0\include\GL;freeglut\include;SDL\include;SDL_mixer\include;SDL_image\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <FloatingPointModel>Precise</FloatingPointModel>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalLibraryDirectories>freeglut\lib\x86;SDL\lib\x86;SDL_mixer\lib\x86;SDL_image\lib\x86;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies);freeglut.lib;sdl.lib;sdl_mixer.lib;sdl_image.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>glew-1.9.0\lib;freeglut\lib\x86;SDL\lib\x86;SDL_mixer\lib\x86;SDL_image\lib\x86;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies);freeglut.lib;sdl.lib;sdl_mixer.lib;sdl_image.lib;glew32.lib</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

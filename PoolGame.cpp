@@ -23,8 +23,8 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
-//#include"game_interface.h"
 #include "PoolGame.h"
+#include "PoolBall.h"
 #include "final.h"
 #include "shader.hpp"
 
@@ -139,79 +139,12 @@ void squirble();
 void sadwhistle();
 
 
-// the poolball is probably the most intensive object in this game:
-class PoolBall 
-{
-public:
-    PoolBall(PoolTable *t, double initx, double initz, double initmass, int number);
-	~PoolBall();
-	
-	static std::vector<glm::vec3> vertices;
-	static std::vector<glm::vec2> uvs;
-	static std::vector<glm::vec3> normals;
-	static GLuint VAO_id, vertexbuffer, uvbuffer, normalbuffer;
-
-    void render(glm::dmat4 &parent_model);
-	double distance_squared(PoolBall& other);
-
-    void friction(double time_fraction);
-
-    void move(double time_fraction);
-
-	static const double diameter;
-    static const double rolling_friction;
-    static const double COrestitution; // without this, collisions don't look realistic enough
-
-	void handle_collision(PoolBall& other, long double t, double time_fraction);
-
-    void actually_reposition(double fdx, double fdz);
-
-	double movement_remaining; // [0..1], defines how much of time_fraction we still have to roll this frame, in case of partial moves due to collisions
-
-    double x, z; // position
-
-    double dx, dz; // velocity
-
-	//double rotation[16]; // 4x4 rotation matrix for the orientation of the ball
-	glm::dmat4 rotation;
-
-	double mass;
-
-	float material[4];
-
-    static GLUquadric *gluq;
-
-	GLuint tex;
-
-	char *name;
-
-	PoolTable *table;
-    int index; // our own index in table->ball[] just because this design is uh
-    // probably don't use index to look things up in the array; just
-    // use it for identity
-
-    bool inplay;
-
-private:
-	
-	// this is to be called when the ball has been repositioned to the point of collision with a wall
-	void test_pocket();
-
-	friend class PoolTable; // they're like best buddies, for real
-};
-
-
 // use GLUquadric for sphere objects
-GLUquadric *PoolBall::gluq = NULL;
 const double PoolBall::diameter = 5.7; // standard American pool balls are 57mm (=5.7cm) 
 const double PoolBall::rolling_friction = 0.15;
 const double PoolBall::COrestitution = 0.95;;
 
-std::vector<glm::vec3> PoolBall::vertices;
-std::vector<glm::vec2> PoolBall::uvs;
-std::vector<glm::vec3> PoolBall::normals;	
-
-GLuint PoolBall::VAO_id, PoolBall::vertexbuffer, PoolBall::uvbuffer, PoolBall::normalbuffer;
+GLuint VAO_id=-1, vertexbuffer=-1, uvbuffer=-1, normalbuffer=-1;
 
 
 
@@ -244,13 +177,6 @@ PoolBall::PoolBall(PoolTable *t, double initx, double initz, double dummy, int i
 		break;
 	}
 
-    if (PoolBall::gluq == NULL)
-    {
-        PoolBall::gluq = gluNewQuadric();
-        gluQuadricNormals(PoolBall::gluq, GLU_SMOOTH);
-        gluQuadricTexture(PoolBall::gluq, GL_TRUE);
-    }
-
 	switch(mode)
 	{
 	case grilliards:
@@ -277,24 +203,7 @@ PoolBall::~PoolBall()
 // draw the pool ball!
 void PoolBall::render(glm::dmat4 &parent_model)
 {
-	glEnable(GL_TEXTURE_2D);
-
-	glMaterialfv(GL_FRONT, GL_SPECULAR, sunset);
-	glMaterialf (GL_FRONT, GL_SHININESS, 115);
-    glColorMaterial(GL_FRONT, GL_AMBIENT_AND_DIFFUSE); // default really
-    glEnable(GL_COLOR_MATERIAL);
-
-	glColor3ub(255, 255, 255);
-
-	if (tex)
-	{
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, tex);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);		
-	}
-
-	glm::dmat4 model = parent_model * glm::translate(glm::dmat4(1.0), glm::dvec3(x, diameter/2, z)) * rotation * glm::scale(glm::dmat4(1.0), glm::dvec3(diameter/2, diameter/2, diameter/2));
+	glm::dmat4 model = parent_model * glm::translate(glm::dmat4(1.0), glm::dvec3(x, diameter/2, z)) * rotation * glm::scale(glm::dmat4(1.0), glm::dvec3(diameter/2));
 
 	glm::mat4 MVP;
 	MVP << (perspective * view * model);
@@ -528,7 +437,7 @@ public:
             }
         }
 
-#if 0
+#if 1
 		// this is a really quick way of drawing a slab of the proper dimensions but the polygons won't get lit up well by positional lights
         glScaled(width, 10.0, length);
         glutSolidCube(1.0);
@@ -1748,6 +1657,12 @@ void gogogo()
 
 void load_assets()
 {
+	idProgram = LoadShaders("Fixed.vert.glsl", "TextureFragmentShader.glsl"); glErrorCheck();
+	idMVP = glGetUniformLocation(idProgram, "MVP"); glErrorCheck();	
+	idMV = glGetUniformLocation(idProgram, "MV"); glErrorCheck();	
+	idN = glGetUniformLocation(idProgram, "N"); glErrorCheck();	
+	idTex = glGetUniformLocation(idProgram, "tex_id"); glErrorCheck();
+
 	if (textures[0] == -1)
 	{
 		for (int i = 0; i < NUM_TEXTURES; ++i)
@@ -1756,7 +1671,7 @@ void load_assets()
 		}
 	}
 
-	if (!Sounds::ballclack) Sounds::ballclack = Mix_LoadWAV("data/lonepoolballhit.wav"); // we want clacking balls!
+	if (!Sounds::ballclack) Sounds::ballclack = Mix_LoadWAV("data/lonepoolballhit.wav"); // o< klak klak
 	if (!Sounds::ballclack) fprintf(stderr, ":( %s \n", SDL_GetError());
 
     if (!Sounds::beepverb) Sounds::beepverb = Mix_LoadWAV("data/beepverb.wav");
@@ -1766,40 +1681,7 @@ void load_assets()
 	if (!Sounds::squirble) fprintf(stderr, ":( %s \n", SDL_GetError());
 
 	if (!Sounds::sadwhistle) Sounds::sadwhistle = Mix_LoadWAV("data/sadwhistle.wav");
-	if (!Sounds::sadwhistle) fprintf(stderr, ":( %s \n", SDL_GetError());
-	
-	// refactor into a "load model" method or something...
-	loadOBJ("icosphere.obj", PoolBall::vertices, PoolBall::uvs, PoolBall::normals); 
-	//loadOBJ("cube.obj", PoolBall::vertices, PoolBall::uvs, PoolBall::normals); 
-	
-	glErrorCheck();
-	
-	glGenVertexArrays(1, &PoolBall::VAO_id); glErrorCheck();
-	glBindVertexArray(PoolBall::VAO_id); glErrorCheck();
-	
-	glGenBuffers(1, &PoolBall::vertexbuffer); glErrorCheck();
-	glBindBuffer(GL_ARRAY_BUFFER, PoolBall::vertexbuffer); glErrorCheck();
-	glBufferData(GL_ARRAY_BUFFER, PoolBall::vertices.size() * sizeof(glm::vec3), &PoolBall::vertices[0], GL_STATIC_DRAW); glErrorCheck();
-	glEnableVertexAttribArray(0); glErrorCheck();
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0); glErrorCheck();
-	
-	glGenBuffers(1, &PoolBall::uvbuffer); glErrorCheck();
-	glBindBuffer(GL_ARRAY_BUFFER, PoolBall::uvbuffer); glErrorCheck();
-	glBufferData(GL_ARRAY_BUFFER, PoolBall::uvs.size() * sizeof(glm::vec2), &PoolBall::uvs[0], GL_STATIC_DRAW); glErrorCheck();
-	glEnableVertexAttribArray(1); glErrorCheck();
-	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, (void*)0); glErrorCheck();
-	
-	glGenBuffers(1, &PoolBall::normalbuffer);
-	glBindBuffer(GL_ARRAY_BUFFER, PoolBall::normalbuffer);
-	glBufferData(GL_ARRAY_BUFFER, PoolBall::normals.size() * sizeof(glm::vec3), &PoolBall::normals[0], GL_STATIC_DRAW);	
-	glEnableVertexAttribArray(2);
-	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
-
-	idProgram = LoadShaders("Fixed.vert.glsl", "TextureFragmentShader.glsl"); glErrorCheck();
-	idMVP = glGetUniformLocation(idProgram, "MVP"); glErrorCheck();	
-	idMV = glGetUniformLocation(idProgram, "MV"); glErrorCheck();	
-	idN = glGetUniformLocation(idProgram, "N"); glErrorCheck();	
-	idTex = glGetUniformLocation(idProgram, "tex_id"); glErrorCheck();
+	if (!Sounds::sadwhistle) fprintf(stderr, ":( %s \n", SDL_GetError());	
 }
 
 

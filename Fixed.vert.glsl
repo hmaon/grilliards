@@ -11,14 +11,13 @@ layout(location = 2) in vec3 vertexNormal_modelspace;
 
 // Output data ; will be interpolated for each fragment.
 out vec2 UV;
-#ifdef FLAT_SHADING
-out vec4 color_part; // all colors will be computed in fragment shader
-#endif
+out vec4 color_part;
 
 flat out vec3 lightVec_viewspace[2];
 out vec3 normal_viewspace;
 out vec3 normal_modelspace;
-out vec3 reflectVec_viewspace[2]; // not sure whether it's valid to interpolate this... if it introduces an error, it is imperceptible so far
+flat out vec3 halfVec_directionalLight_viewspace[2]; 
+out vec3 toLight_viewspace[2];
 
 // Values that stay constant for the whole mesh.
 uniform mat4 MVP;
@@ -41,7 +40,7 @@ uniform float ambient;
 uniform float diffuse;
 uniform float specular;
 
-uniform vec3 eye_position;;
+const vec3 eye = vec3 (0.0, 0.0, 1.0);
 
 ///*******************************************************
 //*  Fixed.vert Fixed Function Equivalent Vertex Shader  *
@@ -53,19 +52,15 @@ vec4 Diffuse;
 vec4 Specular;
 
 
-void pointLight(in int i, in vec3 normal, in vec3 eye, in vec3 ecPosition3)
+void pointLight(in int i, in vec3 normal, in vec3 ecPosition3)
 {
    float nDotVP;       // normal . light direction
    float nDotHV;       // normal . light half vector
    float pf;           // power factor
-   float attenuation;  // computed attenuation factor
+   float attenuation = 1.0;  // computed attenuation factor
    float d;            // distance from surface to light source
    vec3  VP;           // direction from surface to light position
    vec3  halfVector;   // direction of maximum highlights
-
-   //float derp = max(0.0, dot(normal, -ecPosition3));
-   //Diffuse += light_diffuse[i] * derp;
-   //return;
 
    // Compute vector from surface to light position
    VP = vec3(V * lightPosition_worldspace[i]) - ecPosition3;
@@ -76,6 +71,7 @@ void pointLight(in int i, in vec3 normal, in vec3 eye, in vec3 ecPosition3)
    // Normalize the vector from surface to light position
    VP = normalize(VP);
 
+#ifdef FLAT_SHADING
    // Compute attenuation
 #if 0
    attenuation = 1.0 / (light_constantAttenuation[i] +
@@ -96,38 +92,34 @@ void pointLight(in int i, in vec3 normal, in vec3 eye, in vec3 ecPosition3)
    else
    {
        pf = pow(nDotHV, shininess);
-
    }
-   Ambient  += light_ambient[i] * attenuation;
    Diffuse  += light_diffuse[i] * nDotVP * attenuation;
    Specular += light_specular[i] * pf * attenuation;
+#else
+   toLight_viewspace[i] = VP;
+#endif
+   Ambient  += light_ambient[i] * attenuation;
 }
 
+// directoinal light seems a bit off
 void directionalLight(in int i, in vec3 normal)
 {
    float nDotVP;         // normal . light direction
    //float nDotHV;         // normal . light half vector
    float pf;             // power factor
 
-   vec3 lightVec =  normalize( vec3(V * lightPosition_worldspace[i]) );
+   vec3 lightVec =  normalize( mat3(V) * (vec3(lightPosition_worldspace[i]) / lightPosition_worldspace[i].w) );
 
 #ifdef FLAT_SHADING
    nDotVP = max( 0.0, dot(normal, lightVec) );
 #endif
 
-   // Eye vector (towards the camera)
-   vec3 E = vec3(0.0, 0.0, 1.0);
-   // Direction in which the triangle reflects the light
-   vec3 R = reflect(-lightVec, normal);
-   // Cosine of the angle between the Eye vector and the Reflect vector,
-   // clamped to 0
-   //  - Looking into the reflection -> 1
-   //  - Looking elsewhere -> < 1
-#ifdef FLAT_SHADING
-   float cosAlpha = clamp( dot(E, R), 0, 1 );
+   vec3 halfVector = normalize(lightVec + eye);
 
-   //nDotHV = max(0.0, dot(normal, vec3 (light_.halfVector)))[i];
-   //nDotHV = max(0.0, dot(normal, vec3 (V * vec4(0.0, 1.0, 0.0, 0.0))));
+#ifdef FLAT_SHADING
+   //float cosAlpha = clamp( dot(E, R), 0, 1 );
+
+   nDotHV = max(  0.0, dot( normal, vec3(halfVector) )  );
 
    if (nDotVP == 0.0)
    {
@@ -135,13 +127,13 @@ void directionalLight(in int i, in vec3 normal)
    }
    else
    {
-       pf = pow(cosAlpha, shininess);
+       pf = pow(nDotHV, shininess);
    }
    Specular += light_specular[i] * pf;
    Diffuse  += light_diffuse[i] * nDotVP;
 #else
    lightVec_viewspace[i] = lightVec;
-   reflectVec_viewspace[i] = R;
+   halfVec_directionalLight_viewspace[i] = halfVector;
 #endif
    Ambient  += light_ambient[i];
 
@@ -178,21 +170,19 @@ void light(in vec3 normal, in vec4 ecPosition, float alphaFade)
 {
     vec4 color;
     vec3 ecPosition3;
-    vec3 eye;
 
-    ecPosition3 = (vec3 (ecPosition)) / ecPosition.w;
-    eye = vec3 (0.0, 0.0, 1.0);
+    ecPosition3 = (vec3 (ecPosition)) / ecPosition.w;    
 
     // Clear the light intensity accumulators
     Ambient  = vec4 (0.0);
     Diffuse  = vec4 (0.0);
     Specular = vec4 (0.0);
 
-    //pointLight(0, normal, eye, ecPosition3);
+    pointLight(0, normal, ecPosition3);
 
-    //pointLight(1, normal, eye, ecPosition3);
+    //pointLight(1, normal, ecPosition3);
 
-    directionalLight(0, normal);
+    //directionalLight(0, normal);
 
 #ifdef FLAT_SHADING
     color = sceneColor +
@@ -201,6 +191,9 @@ void light(in vec3 normal, in vec4 ecPosition, float alphaFade)
     color += Specular * specular;
     color = clamp( color, 0.0, 1.1 );
     color_part = color;
+#else
+    color = sceneColor + Ambient * ambient;
+	color_part = clamp(color, 0.0, 1.0);
 #endif
 }
 

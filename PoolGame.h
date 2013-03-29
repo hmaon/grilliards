@@ -1,4 +1,5 @@
 #pragma once
+#include "glm\glm.hpp"
 
 namespace PoolGame
 {
@@ -9,6 +10,26 @@ class PoolBall;
 
 #define NUM_TEXTURES 16
 
+// shader program id
+extern GLuint idProgram;
+
+// MVP matrix id, needed everywhere...
+extern GLuint idMVP, idMV, idN, idTex;
+
+// constants, global for now
+extern const GLfloat mat_white[];
+extern const GLfloat light_position[];
+extern const GLfloat light_position1[];
+extern const GLfloat nil_position[];
+extern const GLfloat sunset[];
+extern const GLfloat tungsten_100w[];
+extern const GLfloat dim_ambiance[];
+extern const GLfloat mat_blue[];
+extern const GLfloat mat_green[];
+extern const GLfloat mat_black[];
+extern const GLfloat mat_grey[];
+
+extern glm::vec3 eye;
 
 typedef enum poolgamestate_enum
 {
