@@ -1,7 +1,8 @@
 #pragma once
-#include "glm\glm.hpp"
+#include "glm/glm.hpp"
 #include "glew.h"
 #include "SimpleMesh.h"
+#include "PoolTable.h"
 
 
 namespace PoolGame

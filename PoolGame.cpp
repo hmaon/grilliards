@@ -25,6 +25,7 @@
 
 #include "PoolGame.h"
 #include "PoolBall.h"
+#include "PoolTable.h"
 #include "final.h"
 #include "shader.hpp"
 
@@ -56,23 +57,23 @@ bool chasecam = false;
 float camera_angle = 0;
 float cue_angle = 270;
 float cue_power = 1.0f;
-bool use_mass = true;
+bool use_mass = false; // assign the relative mass of planets to balls
 int hits = 0;
 glm::vec3 eye;
 
 // shader program id
 GLuint idProgram = -1;
 
-// MVP matrix id, needed everywhere...
-GLuint idMVP = -1, idMV = -1, idN = -1, idTex = -1;
+// ids of uniform shader vars that change with every mesh
+GLuint idMVP = -1, idMV = -1, idN = -1, idTex = -1, idEye = -1;
+
+PoolGameState state = intro; 
+PoolGameMode mode = amazeballs; 
 
 
-PoolGameState state = intro; // pool game state? you don't say? must be the state of the pool game?
-PoolGameMode mode = amazeballs; // yep.
-
-
-// graphics and sound assets:
+// graphics and sound assets, such as they are:
 GLint textures[NUM_TEXTURES] = {-1};
+GLint tabletexture = -1;
 
 namespace Sounds
 {
@@ -84,13 +85,6 @@ Mix_Chunk *sadwhistle = NULL;
 };
 
 
-
-typedef struct BallInfos_struct
-{
-    char *texture;
-    double mass;
-    char *name;
-} BallInfos;
 
 //#define NUM_TEXTURES 16
 BallInfos bally[NUM_TEXTURES] = {
@@ -108,13 +102,10 @@ BallInfos bally[NUM_TEXTURES] = {
 	{"data/melon.jpg",       0.2,    "Melon"},
 	{"data/ultrapotato.jpg", 0.2,    "Potato"},
 	{"data/eye.jpg",         0.2,    "Eye"},
-    {"data/clouds.jpg",      0.5,    "Cloudworld"},
+    {"data/clouds.jpg",      0.5,    "LV426"},
     {"data/apple.jpg",       0.2,    "Apple"}
 };
     
-// the number of the beef:
-#define NUM_BEEF 7
-
 
 
 
@@ -128,814 +119,21 @@ BallInfos bally[NUM_TEXTURES] = {
 // the speed of a cue ball on a breaking shot is 20-ish MPH; second source:
 // http://www.sfbilliards.com/onoda_all_txt.pdf
 // 20 mph = 894.08 centimeters per second
-static int max_speed = 894;
+int max_speed = 894;
 
 
 
 // some forward declarations
 class PoolTable;
 class PoolBall;
-void squirble();
-void sadwhistle();
 
 
-// use GLUquadric for sphere objects
-const double PoolBall::diameter = 5.7; // standard American pool balls are 57mm (=5.7cm) 
-const double PoolBall::rolling_friction = 0.15;
-const double PoolBall::COrestitution = 0.95;;
 
 GLuint VAO_id=-1, vertexbuffer=-1, uvbuffer=-1, normalbuffer=-1;
 
 
 
-// constructor
-PoolBall::PoolBall(PoolTable *t, double initx, double initz, double dummy, int initindex) : x(initx), z(initz), rotation(1.0), table(t), index(initindex)
-{
-    inplay = true;
 
-	movement_remaining = 0.0;
-
-	switch(index)
-	{
-	case 0:
-        if (state == intro)
-        {
-            // for the intro scene, send the cue ball down the table
-            dx = 0.01;
-            dz = max_speed / 4;
-            break;
-        }
-
-
-	default:
-        dx = dz = 0.0;
-		
-		//dx = rand()%(max_speed/2) - max_speed/4;
-		
-		//dz = rand()%(max_speed/2) - max_speed/4;
-
-		break;
-	}
-
-	switch(mode)
-	{
-	case grilliards:
-		tex = textures[NUM_BEEF];
-		name = bally[NUM_BEEF].name;
-		mass = 0.8;
-		break;
-
-	default:
-		tex = textures[index % NUM_TEXTURES];
-		mass = use_mass ? bally[index % NUM_TEXTURES].mass : 1;
-		name = bally[index % NUM_TEXTURES].name;
-		break;
-	}
-}
-
-// destructor
-PoolBall::~PoolBall()
-{
-}
-
-
-
-// draw the pool ball!
-void PoolBall::render(glm::dmat4 &parent_model)
-{
-	glm::dmat4 model = parent_model * glm::translate(glm::dmat4(1.0), glm::dvec3(x, diameter/2, z)) * rotation * glm::scale(glm::dmat4(1.0), glm::dvec3(diameter/2));
-
-	glm::mat4 MVP;
-	MVP << (perspective * view * model);
-
-	glm::mat4 MV;
-	MV << (view * model);
-	
-	glm::mat4 M;
-	M << model;
-	
-	glm::mat4 V;
-	V << view;
-	
-	glm::mat3 N(V * M); // normal matrix	
-	N = glm::transpose(glm::inverse(N)); // ref: http://www.arcsynthesis.org/gltut/Illumination/Tut09%20Normal%20Transformation.html	
-
-	//NaNtest(perspective);
-	//NaNtest(view);
-	//NaNtest(model);
-	//NaNtest(MVP);
-	
-	glm::vec4 test(0.0, 0.0, 0.0, 1.0);
-	test = MVP * test;
-	//printf("%lf, %lf, %lf, %lf\n", test[0], test[1], test[2], test[3]);
-
-	glErrorCheck();
-	
-	glUseProgram(idProgram); glErrorCheck();
-
-	glUniformMatrix4fv(idMVP, 1, 0, &MVP[0][0]); glErrorCheck();
-	glUniformMatrix4fv(idMV, 1, 0, &MV[0][0]); glErrorCheck();
-	glUniformMatrix3fv(idN, 1, 0, &N[0][0]); glErrorCheck();
-	glUniform1i(idTex, 0); glErrorCheck();	
-
-	glUniformMatrix4fv(glGetUniformLocation(idProgram, "M"), 1, 0, &M[0][0]); glErrorCheck();
-	glUniformMatrix4fv(glGetUniformLocation(idProgram, "V"), 1, 0, &V[0][0]); glErrorCheck();
-
-	glUniform4fv(glGetUniformLocation(idProgram, "sceneColor"), 1, mat_black); glErrorCheck();
-	glUniform1f(glGetUniformLocation(idProgram, "ambient"), 0.3f); glErrorCheck();
-	glUniform1f(glGetUniformLocation(idProgram, "diffuse"), 0.7f); glErrorCheck();
-	glUniform1i(glGetUniformLocation(idProgram, "shininess"), 115); glErrorCheck();
-	glUniform1f(glGetUniformLocation(idProgram, "specular"), 1.0f); glErrorCheck();
-	glUniform4fv(glGetUniformLocation(idProgram, "lightPosition_worldspace[0]"), 1, light_position); glErrorCheck();
-	glUniform4fv(glGetUniformLocation(idProgram, "light_ambient[0]"), 1, dim_ambiance); glErrorCheck();
-	glUniform4fv(glGetUniformLocation(idProgram, "light_diffuse[0]"), 1, tungsten_100w); glErrorCheck();
-	glUniform4fv(glGetUniformLocation(idProgram, "light_specular[0]"), 1, tungsten_100w); glErrorCheck();
-	glUniform1f(glGetUniformLocation(idProgram, "light_quadraticAttenuation[0]"), 0.1f); glErrorCheck();
-	glUniform3fv(glGetUniformLocation(idProgram, "eye_position"), 1, &eye[0]); glErrorCheck();
-	
-		
-	glBindVertexArray(VAO_id); glErrorCheck();
-
-	glEnableVertexAttribArray(0); glErrorCheck();
-	//glBindBuffer(GL_ARRAY_BUFFER, PoolBall::vertexbuffer); glErrorCheck();
-	//glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0); glErrorCheck();
-	
-	glEnableVertexAttribArray(1); glErrorCheck();
-	//glEnableVertexAttribArray(2);
-
-	glDrawArrays(GL_TRIANGLES, 0, vertices.size()); glErrorCheck();
-	
-	//glDisableVertexAttribArray(0);
-	//glDisableVertexAttribArray(1);
-	//glDisableVertexAttribArray(2);
-	
-	//glBindAttribLocation(idProgram, 0, "vertexPosition_modelspace"); glErrorCheck();
-	glUseProgram(0); glErrorCheck();
-	
-	glMatrixMode(GL_MODELVIEW);
-	glLoadIdentity();
-	glMultMatrixd(&view[0][0]);
-	glMultMatrixd(&parent_model[0][0]);
-	glMatrixMode(GL_PROJECTION);
-	//glLoadIdentity();
-extern double wide_view[];	
-	//gluLookAt(eye[0], eye[1], eye[2], wide_view[3], wide_view[4], wide_view[5], 0, 1, 0);
-	glLoadMatrixd(&perspective[0][0]);
-	
-	glEnable(GL_DEPTH_TEST);
-	glBegin(GL_LINES);
-#if 1
-	glVertex4f(x, 0, z, 1.0f);
-	glVertex4f(light_position[0], light_position[1], light_position[2], 1.0f);
-#endif
-	
-#if 0
-	for (int i = 0; i < vertices.size(); ++i)
-	{
-		glVertex3f(vertices[i][0], vertices[i][1], vertices[i][2]);
-		glVertex3f(vertices[i][0] + normals[i][0], vertices[i][1] + normals[i][1], vertices[i][2] + normals[i][2]);
-	}
-#endif
-	glEnd(); glErrorCheck();
-	
-	
-	glDisable(GL_TEXTURE_2D);
-}
-
-// distance squared to another ball
-double PoolBall::distance_squared(PoolBall& other)
-{
-	return pow(x-other.x, 2) + pow(z-other.z, 2);
-}
-
-// for qsort:
-PoolBall *current_ball = NULL;
-int PoolBall_distance_cmp(const void *a, const void *b)
-{
-    if (current_ball == NULL) return 0;
-    PoolBall *A = (PoolBall*)a;
-    PoolBall *B = (PoolBall*)b;
-
-    double distance = current_ball->distance_squared(*A) - current_ball->distance_squared(*B);
-	if (distance < 0.0) return -1;
-	if (distance > 0.0) return 1;
-	return 0; // unlikely
-}
-
-// slow your roll
-void PoolBall::friction(double time_fraction)
-{
-	if (dx == 0.0 && dz == 0.0) return;
-
-    dx *= 1.0-(time_fraction*rolling_friction/* *mass */); // forget mass in this calculation, it's unfun
-    dz *= 1.0-(time_fraction*rolling_friction/* *mass */);
-
-    if ((dx*dx + dz*dz) < 0.025) dx = dz = 0.0;
-}
-
-
-//
-// PoolTable!
-//
-class PoolTable
-{
-public:
-	int ballsleft;
-
-	void clear_balls()
-	{
-		if (balls > 0)
-		{
-			for (int i = 0; i < balls; ++i)
-			{
-				if (ball[i] != NULL) delete ball[i];
-				ball[i] = NULL;
-			}
-		}
-	}
-
-    PoolTable()
-    {
-        fprintf(stderr, "PoolTable() reporting...\n");
-
-        balls = 0; 
-		memset(ball, 0, sizeof(void*)*maxballs);
-    }
-
-
-    static const double width; // these two are important
-    static const double length;
-    static const double height; // but this is for visuals, no gameplay effect
-
-	static const int maxballs = 20;
-
-
-    GLfloat shadowmap[138*2][138]; // bleh, just... these are obviously width and length but we need int constants. It just has to fit the table dimensions.
-    // TODO, replace with real shadows :/
-
-	// PoolTable::render()
-    void render(glm::dmat4 &parent_model)
-    {
-
-		glDisable(GL_TEXTURE_2D);
-
-        glMaterialf(GL_FRONT, GL_SHININESS, 110.0); // not too shiny! hurgh. 0 is max shininess, 128 is min.
-
-        glMaterialfv(GL_FRONT, GL_SPECULAR, mat_grey);
-
-        glColorMaterial(GL_FRONT, GL_AMBIENT_AND_DIFFUSE); // default really
-        glEnable(GL_COLOR_MATERIAL);
-               
-
-        glColor3ub(63, 255, 63);
-
-        //
-        // stupid fake shadows :P
-        // I don't think I have time to implement anything proper.
-        // 
-
-        memset((void*)shadowmap, 0, sizeof(GLfloat)*138*138*2);
-
-        int sx, sz;
-        for (int i = 0; i < balls; ++i)
-        {
-            if (!ball[i]->inplay) continue;
-            double bx = ball[i]->x + width/2;
-            double bz = ball[i]->z + length/2;
-
-            for (int x = 0; x < (PoolBall::diameter+1)/2; ++x)
-            {
-                for (int z = 0; z < (PoolBall::diameter+1)/2; ++z)
-                {
-                    double d = x*x + z*z;
-
-                    d -= (PoolBall::diameter * PoolBall::diameter * 0.4);
-
-                    if (d > 0.0) continue;
-
-                    d /= -(PoolBall::diameter * PoolBall::diameter);
-
-                    d += 0.01;
-                    if (d > 1.0) d = 1.0;
-
-                    sx = bx+x; sz = bz+z;
-                    if (sx > 0 && sx < 138 && sz > 0 && sz < 138*2)
-                        shadowmap[sz][sx] = d;
-
-                    sx = bx-x; sz = bz+z;
-                    if (sx > 0 && sx < 138 && sz > 0 && sz < 138*2)
-                        shadowmap[sz][sx] = d;
-                    
-                    sx = bx-x; sz = bz-z;
-                    if (sx > 0 && sx < 138 && sz > 0 && sz < 138*2)
-                        shadowmap[sz][sx] = d;
-                   
-                    sx = bx+x; sz = bz-z;
-                    if (sx > 0 && sx < 138 && sz > 0 && sz < 138*2)
-                        shadowmap[sz][sx] = d;
-                }
-            }
-        }
-
-#if 1
-		// this is a really quick way of drawing a slab of the proper dimensions but the polygons won't get lit up well by positional lights
-        glScaled(width, 10.0, length);
-        glutSolidCube(1.0);
-		//glutWireCube(1.0);
-#endif
-		// glTranslated(-width/2, 5, -length/2);
-		glm::dmat4 model = parent_model * glm::translate(glm::dmat4(1.0), glm::dvec3(-width/2, 5.0, -length/2));
-
-
-        // this draws a table surface out of ~38000 triangles which is really
-        // pretty stupid. The correct approach would be to use two triangles
-        // and a good fragment shader. That's something for the next level
-        // of the class, though, right?
-#if 0
-		for(int x = 0; x < width-1; x++)
-		{
-			glBegin(GL_TRIANGLE_STRIP); // GL_BACON_STRIP, mmm, delicious
-			glNormal3d(0, 1, 0);
-			for(int z = 0; z < length; z++)
-			{
-                // OH YEAH, VERTEX-BASED SHADOWS LIKE IT'S 1995!
-                GLfloat s = 1-shadowmap[z][x+1];
-                glColor3f(0.25*s, 1.0*s, 0.25*s);
-				glVertex3d(x+1, 0, z);
-
-                s = 1-shadowmap[z][x];
-                glColor3f(0.25*s, 1.0*s, 0.25*s);
-				glVertex3d(x, 0,   z);
-			}
-			glEnd();
-		}
-#endif
-
-
-        //glDisable(GL_COLOR_MATERIAL);
-
-		// draw "pockets"
-		// except the table should really be a mesh that we load and I'm not spending a lot of time on these :/
-
-        glColor3ub(255, 255, 0);
-#if 0        
-        glPushMatrix();
-        glTranslated(width/2, 10-PoolBall::diameter*2, 0);
-        glutSolidCube(PoolBall::diameter*2);
-        glPopMatrix();
-        
-        glPushMatrix();
-        glTranslated(-width/2, 10-PoolBall::diameter*2, 0);
-        glutSolidCube(PoolBall::diameter*2);
-        glPopMatrix();
-
-        glPushMatrix();
-        glTranslated(width/2, 10-PoolBall::diameter*2, length/2);
-        glutSolidCube(PoolBall::diameter*2);
-        glPopMatrix();
-
-        glPushMatrix();
-        glTranslated(-width/2, 10-PoolBall::diameter*2, length/2);
-        glutSolidCube(PoolBall::diameter*2);
-        glPopMatrix();
-
-        glPushMatrix();
-        glTranslated(width/2, 10-PoolBall::diameter*2, -length/2);
-        glutSolidCube(PoolBall::diameter*2);
-        glPopMatrix();
-
-        glPushMatrix();
-        glTranslated(-width/2, 10-PoolBall::diameter*2, -length/2);
-        glutSolidCube(PoolBall::diameter*2);
-        glPopMatrix();
-
-#endif
-        // 
-        // draw the balls
-        //
-
-		model = parent_model * glm::translate(glm::dmat4(1.0), glm::dvec3(0, 5+ ball[0]->diameter, 0)); 
-
-		if (balls > 0)
-		{
-			ballsleft = NUM_TEXTURES;
-
-			//glTranslated(0, 5 + ball[0]->diameter, 0);
-
-			for (int i = 0; i < balls; ++i)
-			{
-				if (ball[i]->inplay) ball[i]->render(model);
-				else --ballsleft;
-			}
-
-			ballsleft--; // don't count the cue ball, eh
-
-			if (!ballsleft)
-				state = over;
-		}
-    }
-
-	void update(void)
-	{
-		for (int i = 0; i < balls; ++i)
-		{
-			ball[i]->movement_remaining += 1.0;
-		}
-
-		for (int i = 0; i < balls; ++i)
-		{
-			ball[i]->move(animation_time - old_animation_time);
-			ball[i]->friction(animation_time - old_animation_time);
-		}
-	}
-
-	int balls;
-
-	PoolBall *ball[maxballs];
-
-	friend class PoolBall;
-    friend class PoolGame;
-};
-
-const double PoolTable::width = 137; // 4.5 feet = 137.16cm
-const double PoolTable::length = PoolTable::width*2;
-const double PoolTable::height = 10;
-
-
-// this is to be called when the ball has been repositioned to the point of collision with a wall
-void PoolBall::test_pocket()
-{
-	bool out = false;
-
-	if (state == intro || state == over || state == menu || state == help) return;
-
-	if (abs(z) < diameter) out = true; // side pockets
-	if (abs(z) > table->length/2-diameter && abs(x) > table->width/2-diameter) out = true; // corner pockets... too big? *shrug*
-
-	if (out)
-	{
-		if (index == 0)
-		{
-			// scratched the cue ball
-			state = over;
-			inplay = false;
-			sadwhistle();
-		} else
-		{
-			squirble();
-			inplay = false;
-		}
-	}
-
-}
-
-
-
-// called for the ball to update its stupid position and crash into other stupid things
-// this needs the full declaration of PoolTable to function, hence this location....
-void PoolBall::move(double base_time_fraction)
-{
-	if (movement_remaining == 0.0) return;
-
-	// sanity check...
-	if (dx*base_time_fraction > table->length || dz*base_time_fraction > table->length) 
-	{
-		fprintf(stderr, "velocity insanity.\n");
-		return;
-	}
-
-	if (!inplay) return;
-
-	double time_fraction = base_time_fraction * movement_remaining;
-
-	double fdx = dx * time_fraction;
-	double fdz = dz * time_fraction;
-
-	// test for collisions with the walls
-	// this uses some algorithms based on the collision of a ray with a plane, in 2D
-	// the original 3D formula is here: http://www.cs.princeton.edu/courses/archive/fall00/cs426/lectures/raycast/sld017.htm
-    // or here: http://cgafaq.info/wiki/Ray_Plane_Intersection
-    // or dozens of other pages on the net, some with fewer typos than others
-
-	// though they're not really specific to any number of dimensions...
-
-	// t = N·(Q-E) / N·D
-	// where N is a normal vector of the plane, Q is a point on the plane, 
-    // E is the ray origin,
-	// and D is the ray's direction vector
-	// if t < 0, the plane is behind the origin
-	// if N·D=0, the ray is parallel to the plane
-	// if t >=0, the intersection point is E + tD
-
-	double NdotD, numerator, tx, tz;
-
-    double Qx, Qz;
-    double Nx, Nz;
-
-    if (fdx > 0.0)
-    {
-        // test distance to right wall
-        Qx = table->width/2;
-        Qz = 0;
-
-        Nx = -1;
-        Nz = 0;
-
-        NdotD = dotProduct(Nx, Nz, fdx, fdz);
-        numerator = dotProduct(Nx, Nz, Qx-(x+diameter/2), Qz-z);
-
-        // x+diameter/2 rather than just x because we're testing the collison
-        // of the surface of the ball rather than its center
-
-        tx = numerator / NdotD;
-    } else if (fdx < 0.0)
-    {
-        // try the left wall
-        Qx = -table->width/2;
-        Qz = 0;
-
-        Nx = 1;
-        Nz = 0;
-
-        NdotD = dotProduct(Nx, Nz, fdx, fdz);
-        numerator = dotProduct(Nx, Nz, Qx-(x-diameter/2), Qz-z);
-
-        tx = numerator / NdotD;
-    } else
-        tx = 1000000.0; // just some impossibly-large number
-
-
-    if (fdz > 0.0)
-    {
-        // test distance to near wall
-        Qx = 0;
-        Qz = table->length/2;
-
-        Nx = 0;
-        Nz = -1;
-
-        NdotD = dotProduct(Nx, Nz, fdx, fdz);
-        numerator = dotProduct(Nx, Nz, Qx-x, Qz-(z+diameter/2));
-
-        // x+diameter/2 rather than just x because we're testing the collison
-        // of the surface of the ball rather than its center
-
-        tz = numerator / NdotD;
-    } else if (fdz < 0.0)
-    {
-        // try the far wall
-        Qx = 0;
-        Qz = -table->length/2;
-
-        Nx = 0;
-        Nz = 1;
-
-
-        NdotD = dotProduct(Nx, Nz, fdx, fdz);
-        numerator = dotProduct(Nx, Nz, Qx-x, Qz-(z-diameter/2));
-
-        tz = numerator / NdotD;
-    } else
-        tz = 1000000.0; // just some impossibly-large number
-
-
-    // the ball will be closer to one of the sides than the other, probably
-    if (tx < tz)
-    {
-        if (tx < 1.0)
-        {
-            //fprintf(stderr, "tx==%g\n", tx);
-            double t_rest = 1.0 - tx;
-            // {x,y} + {fdx,fdy} * tx = the point where the ball hits the table
-
-            actually_reposition(fdx*tx, fdz*tx);
-			test_pocket();
-
-            dx *= -1; // BOUNCE! :D
-
-			movement_remaining = t_rest;
-
-            return move(time_fraction);
-        }
-    } else
-    {
-        if (tz < 1.0)
-        {
-            //fprintf(stderr, "tz==%g\n", tz);
-            double t_rest = 1.0 - tz;
-            // {x,y} + {fdx,fdy} * tx = the point where the ball hits the table
-
-            actually_reposition(fdx*tz, fdz*tz);
-			test_pocket();
-
-            dz *= -1; // BOUNCE! :D
-
-			movement_remaining = t_rest;
-
-            return move(time_fraction);
-        }
-    }
-    // wall code done
-
-
-    // test for collisions with other balls
-    // I found this to be very helpful: 
-    // http://twobitcoder.blogspot.com/2010/04/circle-collision-detection.html
-
-    double Vabx, Vabz;
-    double Pabx, Pabz;
-    long double a, b, c;
-
-    // sort the balls by distance, check nearest for collisions first
-    PoolBall *sorted[table->maxballs];
-    for (int r = 0, w = 0; r < table->maxballs; ++w, ++r) sorted[w] = table->ball[r]; 
-    current_ball = this; // for PoolBall_distance_cmp(); see its implementation
-    qsort(sorted, table->balls, sizeof(PoolBall*), PoolBall_distance_cmp);
-
-    for (int i = 0; i < table->balls; ++i)
-    {
-        if (sorted[i]->index == index) continue; // could probably just start at index 1 but let's not make this confusing...
-        // test whether other ball has already run move() this frame??? XXX
-
-        if (!(sorted[i]->inplay)) continue; // Don't collide with balls in pockets...
-
-		Pabx =  x - sorted[i]-> x; // vector in the direction of the other ball? or whatever? derp
-        Pabz =  z - sorted[i]-> z;
-
-		// sanity-check current distance!
-		if ((Pabx*Pabx + Pabz*Pabz) < diameter*diameter)
-		{
-			//fputs("unfortunate intersection.\n", stderr);
-			handle_collision(*(sorted[i]), 0.0, time_fraction);
-			fdx = dx * time_fraction;
-			fdz = dz * time_fraction; 
-			//break; // Just stop doing things, algorithm. Clearly you're not good at them.
-		}
-
-
-        Vabx = fdx - sorted[i]->dx*time_fraction; // relative velocity vector
-        Vabz = fdz - sorted[i]->dz*time_fraction;
-		
-
-
-        if (abs(Vabx) < 0.00000001) Vabx = 0.0;
-        if (abs(Vabz) < 0.00000001) Vabz = 0.0;
-
-		if (Vabx == 0.0 && Vabz == 0.0) continue; // no relative motion? clearly not going to collide, huh.
-
-        a = dotProduct(Vabx, Vabz, Vabx, Vabz);
-        b = 2 * dotProduct(Pabx, Pabz, Vabx, Vabz);
-        c = dotProduct(Pabx, Pabz, Pabx, Pabz) - diameter*diameter;
-        
-		// b^2-4ac is the discriminant of the quadratic polynomial
-        if ((b*b - 4*a*c) >= 0.0)
-        {
-            // we have one or two roots
-            long double t0, t1, t;
-
-            t0 = quadratic_formula0(a, b, c);
-            t1 = quadratic_formula1(a, b, c);
-
-			if (t0 < 0.0 && t1 < 0.0) { 
-				//puts("past collision?"); 
-				continue; 
-			}
-			
-			if (t0 < 0.0) t = t1;
-			else if (t1 < 0.0) t = t0;
-			else if (t0 < t1) t = t0;
-			else t = t1;
-
-            //printf("%g, %g\n", t1, t0);
-
-            if (t >= 0.0  && t <= 1.0)
-            {
-				/*
-                printf("OMG bonk: %g, %g?!\n", (double)t, (double)
-                    (pow((x+t*fdx) - (sorted[i]->x + t * sorted[i]->dx * time_fraction), 2) + 
-                    pow((z+t*fdz) - (sorted[i]->z + t * sorted[i]->dz * time_fraction), 2) -
-                    pow(diameter, 2)));
-				*/
-
-				handle_collision(*(sorted[i]), t, time_fraction);
-				time_fraction = base_time_fraction * movement_remaining; // movement_remaining was updated by handle_collision()... 
-				fdx = dx * time_fraction;
-				fdz = dz * time_fraction; // now we can keep looping without recursing, yes?
-            }
-        }
-    }
-
-	movement_remaining = 0.0;
-
-    actually_reposition(fdx, fdz); // no collisions, simple case
-}
-
-    
-void PoolBall::actually_reposition(double fdx, double fdz)
-{
-    x += fdx;
-    z += fdz;
-
-	double distance = sqrt(fdx*fdx + fdz*fdz);
-	if (distance < std::numeric_limits<double>::epsilon()) return; 
-	// a distance of ~0 results in a bogus axis and an angle of ~0, which fill the rotation matrix with NaNs
-
-	glm::dvec3 axis(fdz, 0, -fdx);
-	rotation = glm::rotate(glm::dmat4(1.0), 360.0 * (distance /(M_PI * diameter)), glm::normalize(axis)) * rotation;
-}
-
-
-// Calculate the consequences of a collision between two pool balls.
-// It's handled like a 2D elastic collision between two circles, really;
-// Sorry, no jumping the cue ball at this point.
-// The long double precision is unnecessary; it's just there because I 
-// was trying to eliminate potential precision errors while debugging 
-// a really stupid typo in the collision detection code and t ended 
-// up a long double.
-//
-// thanks to http://www.vobarian.com/collisions/2dcollisions2.pdf
-// for the algorithm and sample code
-//
-// other is the other ball; it will be moved into the position of collision
-//
-// t*time_fraction is the multiplier for dx,dz to move the balls into the position where they collide
-// t may be 0.0 if some balls intersected :/
-//
-//
-// Note that this algorithm moves the balls immediately and then 
-// updates movement_remaining. A more sound implementation would
-// make a list of all the possible collisions, wind time to the first
-// collision, update that, and recalculate everything. However, this
-// is not meant to be a totally rigorous physics simulation. 
-// We don't need all that. We need just enough physics to have fun.
-//
-void PoolBall::handle_collision(PoolBall& other, long double t, double time_fraction)
-{
-	if (mass == 0.0 || other.mass == 0.0) return; // ephemeral entities do not collide
-
-	// roll balls to the point of impact
-	if (t != 0.0 && time_fraction != 0.0)
-	{
-		actually_reposition(dx*t*time_fraction, dz*t*time_fraction);
-		movement_remaining -= t;
-
-		other.actually_reposition(other.dx*t*time_fraction, other.dz*t*time_fraction);
-		other.movement_remaining -= t;
-	}
-
-	// unit normal and unit tangent vectors
-	double uNx = other.x - x; // normal
-	double uNz = other.z - z;
-
-	double mag = sqrt(uNx*uNx + uNz*uNz); 
-
-	uNx /= mag; // normalized (unit) normal
-	uNz /= mag;
-
-	// untangle stupid-ass intersected spheres. ugh!
-	if (abs(t) < std::numeric_limits<double>::epsilon())
-	{
-		other.actually_reposition((diameter-mag) * uNx * 1.0001, (diameter-mag) * uNz * 1.0001);
-		return handle_collision(other, -1.0, 0); // uNz, uNz, etc. have to be recalculated
-	}
-
-
-
-	double uTx = -uNz; // unit tangent
-	double uTz = uNx; 
-
-	// scalar projections of velocities onto above vectors
-	double v1n = dotProduct(uNx, uNz, dx, dz);
-	double v1t = dotProduct(uTx, uTz, dx, dz);
-	double v2n = dotProduct(uNx, uNz, other.dx, other.dz);
-	double v2t = dotProduct(uTx, uTz, other.dx, other.dz);
-
-	// tangential velocities don't change in a purely elastic collision
-
-    // apply coefficient of restitution to the velocity projections
-    v1n *= COrestitution;
-    v2n *= COrestitution;
-
-	// normal velocities do:
-	double v1n_prime = (v1n * (mass - other.mass) + 2.0 * other.mass * v2n) / (mass + other.mass);
-	double v2n_prime = (v2n * (other.mass - mass) + 2.0 * mass       * v1n) / (mass + other.mass);
-
-
-	// the new velocity vectors are vXn_prime * uN + vXt * uT
-
-	dx = v1n_prime * uNx + v1t * uTx;
-	dz = v1n_prime * uNz + v1t * uTz;
-
-	other.dx = v2n_prime * uNx + v2t * uTx;
-	other.dz = v2n_prime * uNz + v2t * uTz;
-
-
-    // play a collision sound
-	Mix_PlayChannel(index%8, Sounds::ballclack, 0);
-	Mix_Volume(index%8, (int) (64.0 * ((abs(v1n_prime) + abs(v2n_prime)) / (max_speed*2.0)))); // scale the volume to the total normal velocity relative to max speed that two balls could have
-	// 128 is max channel volume but it's rude to blast max volume at people
-	//next_channel();
-}
 
 // first 6 arguments to gluLookAt()
 double wide_view[6] = {200, 150, 0, 0, 0, 0};
@@ -1106,12 +304,14 @@ void keyboard1(unsigned char key, int x, int y)
     case 'A':
     case 'a':
         camera_angle -= 10;
+		winReshapeFcn(winWidth, winHeight);
         glutPostRedisplay();
         break;
 
     case 'D':
     case 'd':
         camera_angle += 10;
+		winReshapeFcn(winWidth, winHeight);
         glutPostRedisplay();
         break;
 
@@ -1234,51 +434,9 @@ void display1(void)
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glEnable(GL_DEPTH_TEST);
 
-	//
-	// lights
-	//
-    glEnable(GL_LIGHTING);
-    glEnable(GL_LIGHT0);
-	glEnable(GL_LIGHT1); // two dingy lights hanging over our table
-	//glEnable(GL_LIGHT2);
 
-
-	//glLightfv(GL_LIGHT2, GL_AMBIENT, dim_ambiance);
-
-    glLightfv(GL_LIGHT0, GL_DIFFUSE, tungsten_100w);
-    glLightfv(GL_LIGHT0, GL_SPECULAR, tungsten_100w);
-	glLightf (GL_LIGHT0, GL_SPOT_CUTOFF, 90.0f);
-	glLightf (GL_LIGHT0, GL_SPOT_EXPONENT, 2.0); // spot fades out to edges
-	
-    glLightfv(GL_LIGHT1, GL_DIFFUSE, tungsten_100w);
-    glLightfv(GL_LIGHT1, GL_SPECULAR, tungsten_100w);
-	glLightf (GL_LIGHT1, GL_SPOT_CUTOFF, 90.0f);
-	glLightf (GL_LIGHT1, GL_SPOT_EXPONENT, 5.0); // spot fades out to edges
-
-
-
-
-	// 
-	// light attenuation
-	// (sucks, better to fake it with spotlights)
-	//glLightf (GL_LIGHT0, GL_CONSTANT_ATTENUATION, 0); 
-	//glLightf (GL_LIGHT1, GL_CONSTANT_ATTENUATION, 0);
-
-	//glLightf (GL_LIGHT0, GL_QUADRATIC_ATTENUATION, 0.0009);
-	//glLightf (GL_LIGHT1, GL_QUADRATIC_ATTENUATION, 0.0009);
-
-
-
-	//
-	// light model
-	//
-	notzero = GL_SEPARATE_SPECULAR_COLOR;
-	glLightModeliv(GL_LIGHT_MODEL_LOCAL_VIEWER, &notzero); 
-	glLightModeliv(GL_LIGHT_MODEL_COLOR_CONTROL, &notzero);
-	glLightModelfv(GL_LIGHT_MODEL_AMBIENT, dim_ambiance);
-
-    glMatrixMode(GL_MODELVIEW);
-    glLoadIdentity();
+    //glMatrixMode(GL_MODELVIEW);
+    //glLoadIdentity();
 
 
     static int ballfollowed = 0;
@@ -1344,10 +502,10 @@ void display1(void)
 		look_at(wide_view);
         if (state == intro || state == over || state == menu)
         {
-            glRotatef((animation_time+time_offset)*10, 0, 1, 0);
+			view = glm::rotate(view, (animation_time+time_offset)*10, glm::dvec3(0.0,1.0,0.0));
         } else
         {
-            glRotatef(camera_angle, 0, 1, 0);
+			view = glm::rotate(view, (double)camera_angle, glm::dvec3(0.0, 1.0, 0.0));
         }
         if (state == intro && frames == 3)
         {
@@ -1356,23 +514,6 @@ void display1(void)
         }
     }
 
-	//
-	// Set light positions
-	// 
-
-
-	//glPushMatrix();
-	//glTranslatef(light_position[0], light_position[1], light_position[2]);
-    glLightfv(GL_LIGHT0, GL_POSITION, light_position);
-	//glPopMatrix();
-
-	//glPushMatrix();
-	//glTranslatef(light_position1[0], light_position1[1], light_position1[2]);
-    glLightfv(GL_LIGHT1, GL_POSITION, light_position1);
-	//glPopMatrix();
-
-	glLightfv(GL_LIGHT0, GL_SPOT_DIRECTION, v_down);
-	glLightfv(GL_LIGHT1, GL_SPOT_DIRECTION, v_down);
 
 	//
 	// Draw scene
@@ -1382,6 +523,8 @@ void display1(void)
     //glTranslated(0, -10, 0);
 
     table->render(model); // our table and balls!
+
+	if (!table->ballsleft) state = over;
 
     // cue "stick"
 	// 
@@ -1591,7 +734,7 @@ void display1(void)
 
 		case confirm:
 			glutBitmapString(GLUT_BITMAP_HELVETICA_18, (unsigned char*)
-                "Really quit? (Y/N)");
+                "Abandon game? (Y/N)");
 			break;
 
 		case over:
@@ -1636,15 +779,36 @@ void display1(void)
 }
 
 
+void set_scene_uniform_vars()
+{
+	//
+	// Set light positions and related scene stuff
+	// 
+	
+	glUseProgram(idProgram);
+	glUniform4fv(glGetUniformLocation(idProgram, "sceneColor"), 1, mat_black); glErrorCheck();
+	glUniform1f(glGetUniformLocation(idProgram, "ambient"), 0.3f); glErrorCheck();
+	glUniform1f(glGetUniformLocation(idProgram, "diffuse"), 0.7f); glErrorCheck();
+	glUniform1i(glGetUniformLocation(idProgram, "shininess"), 115); glErrorCheck();
+	glUniform1f(glGetUniformLocation(idProgram, "specular"), 1.0f); glErrorCheck();
+	glUniform4fv(glGetUniformLocation(idProgram, "lightPosition_worldspace[0]"), 1, light_position); glErrorCheck();
+	glUniform4fv(glGetUniformLocation(idProgram, "light_ambient[0]"), 1, dim_ambiance); glErrorCheck();
+	glUniform4fv(glGetUniformLocation(idProgram, "light_diffuse[0]"), 1, tungsten_100w); glErrorCheck();
+	glUniform4fv(glGetUniformLocation(idProgram, "light_specular[0]"), 1, tungsten_100w); glErrorCheck();
+	glUniform1f(glGetUniformLocation(idProgram, "light_quadraticAttenuation[0]"), 0.1f); glErrorCheck();
+}
 
 
 void gogogo()
 {
+
 	load_assets();
+	set_scene_uniform_vars();
 
     if (table == NULL) 
 	{
 		table = new PoolTable();
+		table->texture = tabletexture;
 		newgame();
 	}
 
@@ -1662,6 +826,10 @@ void load_assets()
 	idMV = glGetUniformLocation(idProgram, "MV"); glErrorCheck();	
 	idN = glGetUniformLocation(idProgram, "N"); glErrorCheck();	
 	idTex = glGetUniformLocation(idProgram, "tex_id"); glErrorCheck();
+	idEye = glGetUniformLocation(idProgram, "eye_position"); glErrorCheck();
+
+
+	if (!PoolBall::mesh.loaded) PoolBall::mesh.load("icosphere.obj");
 
 	if (textures[0] == -1)
 	{
@@ -1669,7 +837,12 @@ void load_assets()
 		{
 			textures[i] = send_one_texture(bally[i].texture);
 		}
+		tabletexture = send_one_texture("data/sharecg_pool_table_cloth.jpg");
 	}
+
+	glm::vec2 uv_scale = glm::vec2(16,8);
+	PoolTable::cube.load("cube.obj", &uv_scale);
+
 
 	if (!Sounds::ballclack) Sounds::ballclack = Mix_LoadWAV("data/lonepoolballhit.wav"); // o< klak klak
 	if (!Sounds::ballclack) fprintf(stderr, ":( %s \n", SDL_GetError());
@@ -1691,9 +864,6 @@ void newgame()
 	hits = 0; // this is how we keep score
 
 	table->clear_balls();
-
-	//table->ball[table->balls++] = new PoolBall(table, 0, 0, 1, 0);
-	//table->ball[table->balls++] = new PoolBall(table, 0, -20, 1, 1);
 
     table->ball[0] = new PoolBall(table, 0, -table->length/4, 1, 0);
 

@@ -1,7 +1,7 @@
 CC=gcc
-CXX=codelitegcc g++
+CXX=codelitegcc clang++
 CFLAGS=-O3 -funsigned-char -Wno-write-strings -march=native -ffast-math `pkg-config --cflags sdl SDL_mixer SDL_image glew` -Wall
-CXXFLAGS=$(CFLAGS) -fno-rtti
+CXXFLAGS=$(CFLAGS) -fno-rtti -std=c++11
 LDFLAGS=-lGL -lGLU -lglut `pkg-config --libs sdl SDL_mixer SDL_image glew` 
 
 CPPSRC=$(wildcard *.cpp)

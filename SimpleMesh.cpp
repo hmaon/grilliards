@@ -2,6 +2,7 @@
 
 #include "SimpleMesh.h"
 #include "objloader.hpp"
+#include "vboindexer.hpp"
 #include "final.h"
 #include "PoolGame.h"
 #include <vector>
@@ -10,10 +11,25 @@ namespace PoolGame
 {
 
 
-SimpleMesh::SimpleMesh(char *objFileName)
+void SimpleMesh::load(char *objFileName, glm::vec2 *texture_scaler)
 {
-	// refactor into a "load model" method or something...
-	loadOBJ(objFileName, vertices, uvs, normals); 
+	if (loaded) return;
+	std::vector<glm::vec3> temp_verts, temp_norms;
+	std::vector<glm::vec2> temp_uvs;
+	loadOBJ(objFileName, temp_verts, temp_uvs, temp_norms); 
+
+	indexVBO(temp_verts, temp_uvs, temp_norms, indices, vertices, uvs, normals);
+	printf("%d indices, %d vertices\n", indices.size(), vertices.size());
+
+	if (texture_scaler)
+	{
+		auto start = uvs.begin();
+		auto end = uvs.end();
+		for (auto i = start; i != end; ++i)
+		{
+			(*i) *= *texture_scaler; // tile that texture!
+		}
+	}
 
 	glErrorCheck();
 
@@ -38,6 +54,13 @@ SimpleMesh::SimpleMesh(char *objFileName)
 	glEnableVertexAttribArray(2);
 	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
 
+    // Generate a buffer for the indices as well
+	GLuint elementbuffer;
+	glGenBuffers(1, &elementbuffer);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementbuffer);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned short), &indices[0] , GL_STATIC_DRAW);
+
+
 	loaded = true;
 }
 
@@ -45,12 +68,16 @@ SimpleMesh::SimpleMesh() : loaded(false)
 {
 }
 
+SimpleMesh::SimpleMesh(char *objFN)
+{
+	load(objFN);
+}
 
 SimpleMesh::~SimpleMesh(void)
 {
 }
 
-void SimpleMesh::render( GLuint tex, glm::dmat4 &parent_model, glm::dmat4 &model_to_world_space )
+void SimpleMesh::render( GLuint tex, glm::dmat4 &model_to_world_space )
 {
 	glEnable(GL_TEXTURE_2D);
 
@@ -62,7 +89,7 @@ void SimpleMesh::render( GLuint tex, glm::dmat4 &parent_model, glm::dmat4 &model
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);		
 	}
 
-	glm::dmat4 model = parent_model * model_to_world_space;
+	glm::dmat4 model = model_to_world_space;
 
 	glm::mat4 MVP;
 	MVP << (perspective * view * model);
@@ -100,29 +127,12 @@ void SimpleMesh::render( GLuint tex, glm::dmat4 &parent_model, glm::dmat4 &model
 	glUniformMatrix4fv(glGetUniformLocation(idProgram, "M"), 1, 0, &M[0][0]); glErrorCheck();
 	glUniformMatrix4fv(glGetUniformLocation(idProgram, "V"), 1, 0, &V[0][0]); glErrorCheck();
 
-	glUniform4fv(glGetUniformLocation(idProgram, "sceneColor"), 1, mat_black); glErrorCheck();
-	glUniform1f(glGetUniformLocation(idProgram, "ambient"), 0.3f); glErrorCheck();
-	glUniform1f(glGetUniformLocation(idProgram, "diffuse"), 0.7f); glErrorCheck();
-	glUniform1i(glGetUniformLocation(idProgram, "shininess"), 115); glErrorCheck();
-	glUniform1f(glGetUniformLocation(idProgram, "specular"), 1.0f); glErrorCheck();
-	glUniform4fv(glGetUniformLocation(idProgram, "lightPosition_worldspace[0]"), 1, light_position); glErrorCheck();
-	glUniform4fv(glGetUniformLocation(idProgram, "light_ambient[0]"), 1, dim_ambiance); glErrorCheck();
-	glUniform4fv(glGetUniformLocation(idProgram, "light_diffuse[0]"), 1, tungsten_100w); glErrorCheck();
-	glUniform4fv(glGetUniformLocation(idProgram, "light_specular[0]"), 1, tungsten_100w); glErrorCheck();
-	glUniform1f(glGetUniformLocation(idProgram, "light_quadraticAttenuation[0]"), 0.1f); glErrorCheck();
-	glUniform3fv(glGetUniformLocation(idProgram, "eye_position"), 1, &eye[0]); glErrorCheck();
-
+	glUniform3fv(idEye, 1, &eye[0]); glErrorCheck();
 
 	glBindVertexArray(VAO_id); glErrorCheck();
 
-	glEnableVertexAttribArray(0); glErrorCheck();
-	//glBindBuffer(GL_ARRAY_BUFFER, PoolBall::vertexbuffer); glErrorCheck();
-	//glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0); glErrorCheck();
-
-	glEnableVertexAttribArray(1); glErrorCheck();
-	//glEnableVertexAttribArray(2);
-
-	glDrawArrays(GL_TRIANGLES, 0, vertices.size()); glErrorCheck();
+	glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_SHORT, (void*)0);
+	glUseProgram(0); glErrorCheck();
 }
 
 }

@@ -391,7 +391,7 @@ GLuint send_one_texture(char *image_filename)
         
 
     // for lousy quality, compress textures: 
-    // glTexImage2D(GL_TEXTURE_2D, 0, GL_COMPRESSED_RGB, proper->w, proper->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, proper->pixels);
+    //glTexImage2D(GL_TEXTURE_2D, 0, GL_COMPRESSED_RGB, proper->w, proper->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, proper->pixels);
 
 #ifndef GL_BGR
 #define GL_BGR 0x80E0

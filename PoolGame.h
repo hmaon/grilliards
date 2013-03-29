@@ -1,5 +1,6 @@
 #pragma once
-#include "glm\glm.hpp"
+#include "glm/glm.hpp"
+#include <SDL_mixer.h>
 
 namespace PoolGame
 {
@@ -14,7 +15,7 @@ class PoolBall;
 extern GLuint idProgram;
 
 // MVP matrix id, needed everywhere...
-extern GLuint idMVP, idMV, idN, idTex;
+extern GLuint idMVP, idMV, idN, idTex, idEye;
 
 // constants, global for now
 extern const GLfloat mat_white[];
@@ -29,7 +30,11 @@ extern const GLfloat mat_green[];
 extern const GLfloat mat_black[];
 extern const GLfloat mat_grey[];
 
+extern int max_speed;
+
 extern glm::vec3 eye;
+
+extern bool use_mass; // assign the relative mass of planets to balls
 
 typedef enum poolgamestate_enum
 {
@@ -47,6 +52,7 @@ typedef enum poolgamestate_enum
     nada
 } PoolGameState;
 
+extern PoolGameState state;
 
 typedef enum poolgamemode_enum
 {
@@ -54,6 +60,21 @@ typedef enum poolgamemode_enum
 	grilliards
 } PoolGameMode;
 
+extern PoolGameMode mode;
+
+typedef struct BallInfos_struct
+{
+    char *texture;
+    double mass;
+    char *name;
+} BallInfos;
+
+extern BallInfos bally[NUM_TEXTURES];
+
+extern GLint textures[NUM_TEXTURES];
+
+// the number of the beef:
+#define NUM_BEEF 7
 
 #define STARTGAME 0
 #define CONFUSED  1
@@ -63,10 +84,23 @@ typedef enum poolgamemode_enum
 #define EXEUNT 5
 #define MAXMENUOPTION 6
 
+namespace Sounds
+{
+// sounds?
+extern Mix_Chunk *ballclack;
+extern Mix_Chunk *beepverb;
+extern Mix_Chunk *squirble;
+extern Mix_Chunk *sadwhistle;
+};
+
 
 // methods and such:
 
 void load_assets(); 
+
+// these play sounds:
+void squirble();
+void sadwhistle();
 
 // event handlers for freeglut:
 void idle1(void);
