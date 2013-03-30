@@ -14,7 +14,9 @@
     <ClCompile Include="grilliards.cpp" />
     <ClCompile Include="objloader.cpp" />
     <ClCompile Include="physfsrwops.c" />
+    <ClCompile Include="PoolBall.cpp" />
     <ClCompile Include="poolgame.cpp" />
+    <ClCompile Include="PoolTable.cpp" />
     <ClCompile Include="shader.cpp" />
     <ClCompile Include="SimpleMesh.cpp" />
     <ClCompile Include="vboindexer.cpp" />
@@ -25,6 +27,7 @@
     <ClInclude Include="physfsrwops.h" />
     <ClInclude Include="PoolBall.h" />
     <ClInclude Include="PoolGame.h" />
+    <ClInclude Include="PoolTable.h" />
     <ClInclude Include="shader.hpp" />
     <ClInclude Include="SimpleMesh.h" />
     <ClInclude Include="vboindexer.hpp" />

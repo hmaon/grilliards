@@ -12,13 +12,16 @@ Building on Linux:
 
 A Makefile is included. 
 
-You need freeglut, SDL, SDL_mixer, and SDL_image to build. On Ubuntu, the
-packages required are libsdl-mixer1.2-dev, libsdl-image1.2-dev, freeglut3-dev.
+You need freeglut, SDL, SDL_mixer, and SDL_image, glew, and glm to build. On
+Ubuntu, the packages required are libsdl-mixer1.2-dev, libsdl-image1.2-dev,
+freeglut3-dev, libglew1.6-dev, libglm-dev.
 
 
 Building on Windows:
 
 You need libs and DLLs.
-http://bumba.net/~hmaon/amazeballs/amazeballs_windows_libs.7z
+http://bumba.net/~hmaon/grilliards/amazeballs_windows_libs.7z (N.B., I haven't
+updated these to include GLEW and glm yet. They're easy to get off the web,
+though.)
 
 -- greg v.

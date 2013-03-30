@@ -11,7 +11,7 @@
 #include <stdio.h>
 
 // for windows to define M_PI and such:
-#define _USE_MATH_DEFINES 1
+#define _USE_MATH_DEFINES
 
 #include <cmath>
 #include <limits>

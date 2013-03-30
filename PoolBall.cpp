@@ -8,6 +8,8 @@
 #include "final.h"
 #include "PoolBall.h"
 #include "PoolTable.h"
+#define _USE_MATH_DEFINES
+#include <math.h>
 
 
 namespace PoolGame
