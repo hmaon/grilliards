@@ -20,8 +20,9 @@ freeglut3-dev, libglew1.6-dev, libglm-dev.
 Building on Windows:
 
 You need libs and DLLs.
-http://bumba.net/~hmaon/grilliards/amazeballs_windows_libs.7z (N.B., I haven't
+http://bumba.net/~hmaon/grilliards/grilliards_windows_libs.7z (N.B., I haven't
 updated these to include GLEW and glm yet. They're easy to get off the web,
 though.)
 
--- greg v.
+-- 
+greg v.
