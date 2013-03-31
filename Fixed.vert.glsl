@@ -101,6 +101,7 @@ void pointLight(in int i, in vec3 normal, in vec3 ecPosition3)
    Ambient  += light_ambient[i] * attenuation;
 }
 
+#if 0
 // directoinal light seems a bit off
 void directionalLight(in int i, in vec3 normal)
 {
@@ -139,7 +140,7 @@ void directionalLight(in int i, in vec3 normal)
 
 
 }
-
+#endif
 
 vec3 fnormal(void)
 {

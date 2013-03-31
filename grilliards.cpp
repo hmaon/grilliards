@@ -366,6 +366,23 @@ GLuint send_one_texture(char *image_filename)
     glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_REPEAT);
 
+#if 0
+	// doesn't work
+	if (GLEW_EXT_texture_filter_anisotropic)
+	{
+		static bool have_max = false;
+		static int max = 0;
+
+		if (!have_max) 
+		{
+			glGetTexParameteriv(GL_TEXTURE_2D, GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &max); glErrorCheck();
+			printf("Max texture anisotropy: %d\n", max);
+			have_max = true;
+		}
+		if (max) glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, max); glErrorCheck();
+	}
+#endif
+
 #if 1
 	// an SGI extension from OpenGL 1.4 that seems to be missing
 	// http://www.opengl.org/registry/specs/SGIS/generate_mipmap.txt

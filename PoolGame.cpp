@@ -829,7 +829,7 @@ void load_assets()
 	idEye = glGetUniformLocation(idProgram, "eye_position"); glErrorCheck();
 
 
-	if (!PoolBall::mesh.loaded) PoolBall::mesh.load("icosphere.obj");
+	if (!PoolBall::mesh.loaded) PoolBall::mesh.load("uvsphere.obj");
 
 	if (textures[0] == -1)
 	{
@@ -837,7 +837,9 @@ void load_assets()
 		{
 			textures[i] = send_one_texture(bally[i].texture);
 		}
-		tabletexture = send_one_texture("data/sharecg_pool_table_cloth.jpg");
+		//tabletexture = send_one_texture("data/sharecg_pool_table_cloth.jpg");
+		//tabletexture = send_one_texture("data/noise.jpg");
+		tabletexture = send_one_texture("data/1.jpg");
 	}
 
 	glm::vec2 uv_scale = glm::vec2(16,8);
