@@ -72,7 +72,7 @@ PoolGameMode mode = amazeballs;
 
 
 // graphics and sound assets, such as they are:
-GLint textures[NUM_TEXTURES] = {-1};
+GLint textures[NUM_TEXTURED_BALLS] = {-1};
 GLint tabletexture = -1;
 
 namespace Sounds
@@ -87,7 +87,7 @@ Mix_Chunk *sadwhistle = NULL;
 
 
 //#define NUM_TEXTURES 16
-BallInfos bally[NUM_TEXTURES] = {
+BallInfos bally[NUM_TEXTURED_BALLS] = {
     {"data/celestia.png",    0.3,    "Princess Celestia"},
     {"data/mercurymap.jpg",  0.055,  "Mercury"},
     {"data/venusmap.jpg",    0.815,  "Venus"},
@@ -97,11 +97,11 @@ BallInfos bally[NUM_TEXTURES] = {
     {"data/plutomap1k.jpg",  0.01,   "Pluto"},
     {"data/freezerbeef.jpg", 0.2,    "Ground Beef"},
     {"data/ball_8.png",      1,      "Number 8"},
-	{"data/nyan.png",        0.2,    "Nyan Cat!"},
-	{"data/1.jpg",           0.3,    "Adventure Time"},
-	{"data/melon.jpg",       0.2,    "Melon"},
-	{"data/ultrapotato.jpg", 0.2,    "Potato"},
-	{"data/eye.jpg",         0.2,    "Eye"},
+    {"data/nyan.png",        0.2,    "Nyan Cat!"},
+    {"data/pool-table.png",  0.3,    "Felt"},
+    {"data/melon.jpg",       0.2,    "Melon"},
+    {"data/ultrapotato.jpg", 0.2,    "Potato"},
+    {"data/eye.jpg",         0.2,    "Eye"},
     {"data/clouds.jpg",      0.5,    "LV426"},
     {"data/apple.jpg",       0.2,    "Apple"}
 };
@@ -111,7 +111,7 @@ BallInfos bally[NUM_TEXTURES] = {
 
 // here's a resource for some billiards physics:
 // http://billiards.colostate.edu/threads/physics.html
-// holy hell am I ever not using most of it
+// holy heck am I ever not using most of it
 // O_o
 
 
@@ -143,7 +143,7 @@ double wide_view[6] = {200, 150, 0, 0, 0, 0};
 
 void idle1(void)
 {
-	table->update();
+    table->update();
 }
 
 // currently selected menu item
@@ -152,22 +152,22 @@ int menu_option = STARTGAME;
 
 void beep()
 {
-	Mix_PlayChannel(next_sound_channel, Sounds::beepverb, 0);
-	Mix_Volume(next_sound_channel, 64); 
+    Mix_PlayChannel(next_sound_channel, Sounds::beepverb, 0);
+    Mix_Volume(next_sound_channel, 64); 
     next_channel();
 }
 
 void squirble()
 {
-	Mix_PlayChannel(next_sound_channel, Sounds::squirble, 0);
-	Mix_Volume(next_sound_channel, 32); 
+    Mix_PlayChannel(next_sound_channel, Sounds::squirble, 0);
+    Mix_Volume(next_sound_channel, 32); 
     next_channel();
 }
 
 void sadwhistle()
 {
-	Mix_PlayChannel(next_sound_channel, Sounds::sadwhistle, 0);
-	Mix_Volume(next_sound_channel, 64); 
+    Mix_PlayChannel(next_sound_channel, Sounds::sadwhistle, 0);
+    Mix_Volume(next_sound_channel, 64); 
     next_channel();
 }
 
@@ -196,14 +196,14 @@ void menu_keyboard(unsigned char key, int x, int y)
                 glutPostRedisplay();
                 break;
 
-			case GAMEMODE:
-				switch(mode)
-				{
-				case amazeballs: mode = grilliards; break;
-				default:		 mode = amazeballs; break;
-				}
-				glutPostRedisplay();
-				break;
+            case GAMEMODE:
+                switch(mode)
+                {
+                case amazeballs: mode = grilliards; break;
+                default:		 mode = amazeballs; break;
+                }
+                glutPostRedisplay();
+                break;
 
             case USEMASS:
                 use_mass = !use_mass;
@@ -249,32 +249,32 @@ void menu_keyboard(unsigned char key, int x, int y)
 
 void keyboard1(unsigned char key, int x, int y)
 {
-	if (state == confirm)
-	{
-		if (key == 'y' || key == 'Y')
-		{
-			state = over;
-			key = SDLK_ESCAPE;
-		} else
-		{
-			state = cue;
-			return;
-		}
-	} 
+    if (state == confirm)
+    {
+        if (key == 'y' || key == 'Y')
+        {
+            state = over;
+            key = SDLK_ESCAPE;
+        } else
+        {
+            state = cue;
+            return;
+        }
+    } 
 
 
     switch(key)
     {
     case SDLK_RETURN:
-		if (state == cue) // enter hits the ball
-		{
-			table->ball[0]->dx = -cos(M_PI*cue_angle/180.0) * cue_power * max_speed;
-			table->ball[0]->dz = -sin(M_PI*cue_angle/180.0) * cue_power * max_speed;
-			hits++;
-			state = watch;
-			glutPostRedisplay();
-			break;
-		}
+        if (state == cue) // enter hits the ball
+        {
+            table->ball[0]->dx = -cos(M_PI*cue_angle/180.0) * cue_power * max_speed;
+            table->ball[0]->dz = -sin(M_PI*cue_angle/180.0) * cue_power * max_speed;
+            hits++;
+            state = watch;
+            glutPostRedisplay();
+            break;
+        }
 
     case SDLK_ESCAPE:
         if (state == intro || state == help || state == over)
@@ -286,12 +286,12 @@ void keyboard1(unsigned char key, int x, int y)
             break;
         }
 
-		if (state == cue && key == SDLK_ESCAPE)
-		{
-			state = confirm;
-			glutPostRedisplay();
-			break;
-		}
+        if (state == cue && key == SDLK_ESCAPE)
+        {
+            state = confirm;
+            glutPostRedisplay();
+            break;
+        }
 
         if (state == watch)
         {
@@ -304,29 +304,29 @@ void keyboard1(unsigned char key, int x, int y)
     case 'A':
     case 'a':
         camera_angle -= 10;
-		winReshapeFcn(winWidth, winHeight);
+        winReshapeFcn(winWidth, winHeight);
         glutPostRedisplay();
         break;
 
     case 'D':
     case 'd':
         camera_angle += 10;
-		winReshapeFcn(winWidth, winHeight);
+        winReshapeFcn(winWidth, winHeight);
         glutPostRedisplay();
         break;
 
     case 'W':
     case 'w':
-		cue_power += 0.1f;
-		if (cue_power > 1.0f) cue_power = 1.0f;
-		glutPostRedisplay();
-		break;
+        cue_power += 0.1f;
+        if (cue_power > 1.0f) cue_power = 1.0f;
+        glutPostRedisplay();
+        break;
 
     case 'S':
     case 's':
-		cue_power -= 0.05f;
-		if (cue_power < 0.0f) cue_power = 0.0f;
-		glutPostRedisplay();
+        cue_power -= 0.05f;
+        if (cue_power < 0.0f) cue_power = 0.0f;
+        glutPostRedisplay();
         break;
 
 
@@ -342,10 +342,10 @@ void keyboard1(unsigned char key, int x, int y)
         break;
  
 
-	case 'n':
-	case 'N':
-		newgame();
-		break;
+    case 'n':
+    case 'N':
+        newgame();
+        break;
 
 
     case '?':
@@ -364,7 +364,7 @@ void keyboard1(unsigned char key, int x, int y)
         chasecam = false;
         viewangle = 45.0;
         camera_angle = 0;
-		winReshapeFcn(winWidth, winHeight);
+        winReshapeFcn(winWidth, winHeight);
         glutPostRedisplay();
         break;
 
@@ -428,7 +428,7 @@ void special1(int key, int x, int y)
 
 void display1(void)
 {
-	int notzero = 1;
+    int notzero = 1;
 
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -469,7 +469,7 @@ void display1(void)
         if (state == intro && frames == 3)
         {
             ballfollowed++;
-            if (ballfollowed == NUM_TEXTURES) 
+            if (ballfollowed == NUM_TEXTURED_BALLS) 
             {
                 countdown = ballfollowed;
                 ballfollowed = 0;
@@ -477,19 +477,19 @@ void display1(void)
             }
         }
 
-		if (state == cue) ballfollowed = 0;
+        if (state == cue) ballfollowed = 0;
 
         if (state == cue || !running)
         {
             // manual control
-			eye = glm::vec3(-sin(M_PI*camera_angle/180.0)*66+x, 25, -cos(M_PI*camera_angle/180.0)*66+z);
+            eye = glm::vec3(-sin(M_PI*camera_angle/180.0)*66+x, 25, -cos(M_PI*camera_angle/180.0)*66+z);
             view = glm::lookAt(eye, 
                         glm::vec3(x, -5, z),
                         glm::vec3(0, 1, 0));
         } else
         {
             // look on
-			eye = glm::vec3(0, 50, 0);
+            eye = glm::vec3(0, 50, 0);
             view = glm::lookAt( eye,
                         glm::vec3(x, -5, z),
                         glm::vec3(0, 1, 0));
@@ -498,14 +498,14 @@ void display1(void)
     } else 
     {
 
-		eye = glm::vec3(wide_view[0], wide_view[1], wide_view[2]);
-		look_at(wide_view);
+        eye = glm::vec3(wide_view[0], wide_view[1], wide_view[2]);
+        look_at(wide_view);
         if (state == intro || state == over || state == menu)
         {
-			view = glm::rotate(view, (animation_time+time_offset)*10, glm::dvec3(0.0,1.0,0.0));
+            view = glm::rotate(view, (animation_time+time_offset)*10, glm::dvec3(0.0,1.0,0.0));
         } else
         {
-			view = glm::rotate(view, (double)camera_angle, glm::dvec3(0.0, 1.0, 0.0));
+            view = glm::rotate(view, (double)camera_angle, glm::dvec3(0.0, 1.0, 0.0));
         }
         if (state == intro && frames == 3)
         {
@@ -515,50 +515,50 @@ void display1(void)
     }
 
 
-	//
-	// Draw scene
-	//
+    //
+    // Draw scene
+    //
 
-	glm::dmat4 model = glm::translate(glm::dmat4(1.0), glm::dvec3(0.0, -10.0, 0.0));
+    glm::dmat4 model = glm::translate(glm::dmat4(1.0), glm::dvec3(0.0, -10.0, 0.0));
     //glTranslated(0, -10, 0);
 
     table->render(model); // our table and balls!
 
-	if (!table->ballsleft) state = over;
+    if (!table->ballsleft) state = over;
 
     // cue "stick"
-	// 
+    // 
 
-	if (state == cue)
-	{
-		glDisable(GL_TEXTURE_2D);
-		glColor3ub(255, 63, 0);
-		glBegin(GL_LINES);
-		glVertex3f(table->ball[0]->x, -PoolBall::diameter/2, table->ball[0]->z);
-		glVertex3f(table->ball[0]->x + 50*cos(M_PI*cue_angle/180.0), -PoolBall::diameter/2, table->ball[0]->z + 50*sin(M_PI*cue_angle/180.0));
-		glEnd();
-	}
+    if (state == cue)
+    {
+        glDisable(GL_TEXTURE_2D);
+        glColor3ub(255, 63, 0);
+        glBegin(GL_LINES);
+        glVertex3f(table->ball[0]->x, -PoolBall::diameter/2, table->ball[0]->z);
+        glVertex3f(table->ball[0]->x + 50*cos(M_PI*cue_angle/180.0), -PoolBall::diameter/2, table->ball[0]->z + 50*sin(M_PI*cue_angle/180.0));
+        glEnd();
+    }
 
 
-	glPushMatrix();
-	glTranslated(light_position[0], light_position[1], light_position[2]);
+    glPushMatrix();
+    glTranslated(light_position[0], light_position[1], light_position[2]);
     glRotatef(90, 1, 0, 0);
-	glutWireCylinder(5, 10, 6, 1);
-	glPopMatrix();
+    glutWireCylinder(5, 10, 6, 1);
+    glPopMatrix();
 
-	glPushMatrix();
-	glTranslated(light_position1[0], light_position1[1], light_position1[2]);
+    glPushMatrix();
+    glTranslated(light_position1[0], light_position1[1], light_position1[2]);
     glRotatef(90, 1, 0, 0);
-	glutWireCylinder(5, 10, 6, 1);
-	glPopMatrix();
+    glutWireCylinder(5, 10, 6, 1);
+    glPopMatrix();
 
     // text overlay stuff
     glDisable(GL_LIGHTING);
     glDisable(GL_DEPTH_TEST);
-	glDisable(GL_TEXTURE_2D);
+    glDisable(GL_TEXTURE_2D);
 
-	glMatrixMode(GL_MODELVIEW);
-	glLoadIdentity();
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
 
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
@@ -582,36 +582,36 @@ void display1(void)
         case cue:   tag="[cue]"; break;
         case watch: tag="[balls rolling]"; break;
         case over:  tag="[game over]"; break;
-		case confirm: tag="[confirm]"; break;
+        case confirm: tag="[confirm]"; break;
         case achiev:tag="[really?]"; break;
         default:    tag="[???????]"; break;
     }
 
     glutBitmapString(GLUT_BITMAP_HELVETICA_18, (unsigned char*)tag);
 
-	if (state != intro)
-	{
-		char temp_str[64];
-		glRasterPos2i(0, winHeight-60);
+    if (state != intro)
+    {
+        char temp_str[64];
+        glRasterPos2i(0, winHeight-60);
 #if  defined(_WIN32) && !defined(__MINGW32__)
-				sprintf_s((char*)temp_str, 63, "%d balls remaining.", table->ballsleft);
+                sprintf_s((char*)temp_str, 63, "%d balls remaining.", table->ballsleft);
 #else
-				sprintf((char*)temp_str, "%d balls remaining.", table->ballsleft);
+                sprintf((char*)temp_str, "%d balls remaining.", table->ballsleft);
 #endif
-		glutBitmapString(GLUT_BITMAP_HELVETICA_18, (unsigned char*)
-			temp_str);
-	}
-	
-	if (state == watch)
-	{
-		glRasterPos2i(0, winHeight-80);
-		glutBitmapString(GLUT_BITMAP_HELVETICA_18, (unsigned char*)"press Enter any time");
-	}
+        glutBitmapString(GLUT_BITMAP_HELVETICA_18, (unsigned char*)
+            temp_str);
+    }
+    
+    if (state == watch)
+    {
+        glRasterPos2i(0, winHeight-80);
+        glutBitmapString(GLUT_BITMAP_HELVETICA_18, (unsigned char*)"press Enter any time");
+    }
 
 
-	if (state == cue)
-	{
-		// draw cue power indicator
+    if (state == cue)
+    {
+        // draw cue power indicator
         glEnable (GL_BLEND); 
         glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA); glErrorCheck();
         glColor4f(cue_power, 1-cue_power, 0.1, 0.7);
@@ -622,21 +622,21 @@ void display1(void)
         glVertex2f(70, winHeight*0.8*cue_power);
         glEnd();
 
-		glBegin(GL_LINE_LOOP);
+        glBegin(GL_LINE_LOOP);
         glVertex2f(40, winHeight*0.8);
         glVertex2f(40, 40);
 
         glVertex2f(70, 40);
         glVertex2f(70, winHeight*0.8);
-		glEnd();
-		glDisable(GL_BLEND);
-		glErrorCheck();
-	}
+        glEnd();
+        glDisable(GL_BLEND);
+        glErrorCheck();
+    }
 
 
     if (state == intro || state == menu || state == help || state == over || state == confirm)
     {
-		char hits_str[64];
+        char hits_str[64];
 
         glEnable (GL_BLEND); 
         glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -686,14 +686,14 @@ void display1(void)
                 "Game Type: ");
             glutBitmapString(GLUT_BITMAP_HELVETICA_18, (unsigned char*)
                 ((mode == grilliards)?"Grilliards!" : "Amazeballs!"));
-			if (mode == amazeballs)
-			{
-				glRasterPos2i(42, 160);
-				glutBitmapString(GLUT_BITMAP_HELVETICA_18, (unsigned char*)
-					"With Option: ");
-				glutBitmapString(GLUT_BITMAP_HELVETICA_18, (unsigned char*)
-					(use_mass ? "Varied Mass" : "Uniform Mass"));
-			}
+            if (mode == amazeballs)
+            {
+                glRasterPos2i(42, 160);
+                glutBitmapString(GLUT_BITMAP_HELVETICA_18, (unsigned char*)
+                    "With Option: ");
+                glutBitmapString(GLUT_BITMAP_HELVETICA_18, (unsigned char*)
+                    (use_mass ? "Varied Mass" : "Uniform Mass"));
+            }
             glRasterPos2i(42, 140);
             //glutBitmapString(GLUT_BITMAP_HELVETICA_18, (unsigned char*)
                 //"");
@@ -732,12 +732,12 @@ void display1(void)
                 "when in doubt, hit Enter");
             break;
 
-		case confirm:
-			glutBitmapString(GLUT_BITMAP_HELVETICA_18, (unsigned char*)
+        case confirm:
+            glutBitmapString(GLUT_BITMAP_HELVETICA_18, (unsigned char*)
                 "Abandon game? (Y/N)");
-			break;
+            break;
 
-		case over:
+        case over:
             glutBitmapString(GLUT_BITMAP_HELVETICA_18, (unsigned char*)
                 "hit Enter");
             glRasterPos2i(42, 220);
@@ -747,22 +747,22 @@ void display1(void)
             glutBitmapString(GLUT_BITMAP_HELVETICA_18, (unsigned char*)
                 "You ");
             glutBitmapString(GLUT_BITMAP_HELVETICA_18, (unsigned char*)
-				(table->ball[0]->inplay ? "won! :D" : "scratched. :("));
+                (table->ball[0]->inplay ? "won! :D" : "scratched. :("));
 
 #if  defined(_WIN32) && !defined(__MINGW32__)
-	        sprintf_s((char*)hits_str, 63, "It took %d hits.", hits);
+            sprintf_s((char*)hits_str, 63, "It took %d hits.", hits);
 #else
-			sprintf((char*)hits_str, "It took %d hits.", hits);
+            sprintf((char*)hits_str, "It took %d hits.", hits);
 #endif
 
             glRasterPos2i(42, 180);
             glutBitmapString(GLUT_BITMAP_HELVETICA_18, (unsigned char*)
                 hits_str);
-			break;
-			
+            break;
+            
 
 
-			
+            
 
         default:
             glutBitmapString(GLUT_BITMAP_HELVETICA_18, (unsigned char*)
@@ -772,7 +772,7 @@ void display1(void)
         glDisable (GL_BLEND);
     }
 
-	displayFPSOverlay(true);
+    displayFPSOverlay(true);
 
     //glFinish();
     glutSwapBuffers();
@@ -781,111 +781,112 @@ void display1(void)
 
 void set_scene_uniform_vars()
 {
-	//
-	// Set light positions and related scene stuff
-	// 
-	
-	glUseProgram(idProgram);
-	glUniform4fv(glGetUniformLocation(idProgram, "sceneColor"), 1, mat_black); glErrorCheck();
-	glUniform1f(glGetUniformLocation(idProgram, "ambient"), 0.3f); glErrorCheck();
-	glUniform1f(glGetUniformLocation(idProgram, "diffuse"), 0.7f); glErrorCheck();
-	glUniform1i(glGetUniformLocation(idProgram, "shininess"), 115); glErrorCheck();
-	glUniform1f(glGetUniformLocation(idProgram, "specular"), 1.0f); glErrorCheck();
-	glUniform4fv(glGetUniformLocation(idProgram, "lightPosition_worldspace[0]"), 1, light_position); glErrorCheck();
-	glUniform4fv(glGetUniformLocation(idProgram, "light_ambient[0]"), 1, dim_ambiance); glErrorCheck();
-	glUniform4fv(glGetUniformLocation(idProgram, "light_diffuse[0]"), 1, tungsten_100w); glErrorCheck();
-	glUniform4fv(glGetUniformLocation(idProgram, "light_specular[0]"), 1, tungsten_100w); glErrorCheck();
-	glUniform1f(glGetUniformLocation(idProgram, "light_quadraticAttenuation[0]"), 0.1f); glErrorCheck();
+    //
+    // Set light positions and related scene stuff
+    // 
+    
+    glUseProgram(idProgram);
+    glUniform4fv(glGetUniformLocation(idProgram, "sceneColor"), 1, mat_black); glErrorCheck();
+    glUniform1f(glGetUniformLocation(idProgram, "ambient"), 0.3f); glErrorCheck();
+    glUniform1f(glGetUniformLocation(idProgram, "diffuse"), 0.7f); glErrorCheck();
+    glUniform1i(glGetUniformLocation(idProgram, "shininess"), 115); glErrorCheck();
+    glUniform1f(glGetUniformLocation(idProgram, "specular"), 1.0f); glErrorCheck();
+    glUniform4fv(glGetUniformLocation(idProgram, "lightPosition_worldspace[0]"), 1, light_position); glErrorCheck();
+    glUniform4fv(glGetUniformLocation(idProgram, "light_ambient[0]"), 1, dim_ambiance); glErrorCheck();
+    glUniform4fv(glGetUniformLocation(idProgram, "light_diffuse[0]"), 1, tungsten_100w); glErrorCheck();
+    glUniform4fv(glGetUniformLocation(idProgram, "light_specular[0]"), 1, tungsten_100w); glErrorCheck();
+    glUniform1f(glGetUniformLocation(idProgram, "light_quadraticAttenuation[0]"), 0.1f); glErrorCheck();
 }
 
 
 void gogogo()
 {
 
-	load_assets();
-	set_scene_uniform_vars();
+    load_assets();
+    set_scene_uniform_vars();
 
     if (table == NULL) 
-	{
-		table = new PoolTable();
-		table->texture = tabletexture;
-		newgame();
-	}
+    {
+        table = new PoolTable();
+        table->texture = tabletexture;
+        newgame();
+    }
 
     glutDisplayFunc(&display1);
     glutKeyboardFunc(&keyboard1);
     glutSpecialFunc(&special1);
-	finalIdleFunc = &idle1;
+    finalIdleFunc = &idle1;
 }
 
 
 void load_assets()
 {
-	idProgram = LoadShaders("Fixed.vert.glsl", "TextureFragmentShader.glsl"); glErrorCheck();
-	idMVP = glGetUniformLocation(idProgram, "MVP"); glErrorCheck();	
-	idMV = glGetUniformLocation(idProgram, "MV"); glErrorCheck();	
-	idN = glGetUniformLocation(idProgram, "N"); glErrorCheck();	
-	idTex = glGetUniformLocation(idProgram, "tex_id"); glErrorCheck();
-	idEye = glGetUniformLocation(idProgram, "eye_position"); glErrorCheck();
+    idProgram = LoadShaders("Fixed.vert.glsl", "TextureFragmentShader.glsl"); glErrorCheck();
+    idMVP = glGetUniformLocation(idProgram, "MVP"); glErrorCheck();	
+    idMV = glGetUniformLocation(idProgram, "MV"); glErrorCheck();	
+    idN = glGetUniformLocation(idProgram, "N"); glErrorCheck();	
+    idTex = glGetUniformLocation(idProgram, "tex_id"); glErrorCheck();
+    idEye = glGetUniformLocation(idProgram, "eye_position"); glErrorCheck();
 
 
-	if (!PoolBall::mesh.loaded) PoolBall::mesh.load("uvsphere.obj");
+    if (!PoolBall::mesh.loaded) PoolBall::mesh.load("data/uvsphere.obj");
 
-	if (textures[0] == -1)
-	{
-		for (int i = 0; i < NUM_TEXTURES; ++i)
-		{
-			textures[i] = send_one_texture(bally[i].texture);
-		}
-		//tabletexture = send_one_texture("data/sharecg_pool_table_cloth.jpg");
-		//tabletexture = send_one_texture("data/noise.jpg");
-		tabletexture = send_one_texture("data/1.jpg");
-	}
+    if (textures[0] == -1)
+    {
+        for (int i = 0; i < NUM_TEXTURED_BALLS; ++i)
+        {
+            textures[i] = send_one_texture(bally[i].texture);
+        }
+        //tabletexture = send_one_texture("data/sharecg_pool_table_cloth.jpg");
+        //tabletexture = send_one_texture("data/noise.jpg");
+        tabletexture = send_one_texture("data/pool-table.png");
+    }
 
-	glm::vec2 uv_scale = glm::vec2(16,8);
-	PoolTable::cube.load("cube.obj", &uv_scale);
+    //glm::vec2 uv_scale = glm::vec2(16,8);
+    glm::vec2 uv_scale = glm::vec2(1,1);
+    PoolTable::cube.load("data/table.obj", &uv_scale);
 
 
-	if (!Sounds::ballclack) Sounds::ballclack = Mix_LoadWAV("data/lonepoolballhit.wav"); // o< klak klak
-	if (!Sounds::ballclack) fprintf(stderr, ":( %s \n", SDL_GetError());
+    if (!Sounds::ballclack) Sounds::ballclack = Mix_LoadWAV("data/lonepoolballhit.wav"); // o< klak klak
+    if (!Sounds::ballclack) fprintf(stderr, ":( %s \n", SDL_GetError());
 
     if (!Sounds::beepverb) Sounds::beepverb = Mix_LoadWAV("data/beepverb.wav");
-	if (!Sounds::beepverb) fprintf(stderr, ":( %s \n", SDL_GetError());
+    if (!Sounds::beepverb) fprintf(stderr, ":( %s \n", SDL_GetError());
 
     if (!Sounds::squirble) Sounds::squirble = Mix_LoadWAV("data/lowsquirble.wav");
-	if (!Sounds::squirble) fprintf(stderr, ":( %s \n", SDL_GetError());
+    if (!Sounds::squirble) fprintf(stderr, ":( %s \n", SDL_GetError());
 
-	if (!Sounds::sadwhistle) Sounds::sadwhistle = Mix_LoadWAV("data/sadwhistle.wav");
-	if (!Sounds::sadwhistle) fprintf(stderr, ":( %s \n", SDL_GetError());	
+    if (!Sounds::sadwhistle) Sounds::sadwhistle = Mix_LoadWAV("data/sadwhistle.wav");
+    if (!Sounds::sadwhistle) fprintf(stderr, ":( %s \n", SDL_GetError());	
 }
 
 
 // reset all the things?
 void newgame()
 {
-	hits = 0; // this is how we keep score
+    hits = 0; // this is how we keep score
 
-	table->clear_balls();
+    table->clear_balls();
 
     table->ball[0] = new PoolBall(table, 0, -table->length/4, 1, 0);
 
-	for (int i = 1, row = 0, j = 0; i < NUM_TEXTURES; ++i)
-	{
-		double z = table->length / 4 + row*PoolBall::diameter*0.8;
+    for (int i = 1, row = 0, j = 0; i < NUM_TEXTURED_BALLS; ++i)
+    {
+        double z = table->length / 4 + row*PoolBall::diameter*0.8;
 
-		double x = j * PoolBall::diameter - row * PoolBall::diameter / 2;
+        double x = j * PoolBall::diameter - row * PoolBall::diameter / 2;
 
-		table->ball[i] = new PoolBall(table, x, z, 1, i);
+        table->ball[i] = new PoolBall(table, x, z, 1, i);
 
-		if (!j) 
-		{
-			++row;
-			j = row;
-		} else --j;
+        if (!j) 
+        {
+            ++row;
+            j = row;
+        } else --j;
 
-	}
+    }
 
-	table->balls = NUM_TEXTURES;
+    table->balls = NUM_TEXTURED_BALLS;
 }
 
 }; // namespace

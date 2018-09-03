@@ -72,10 +72,10 @@ glm::dmat4 view, perspective;
 
 void NaNtest(glm::dmat4 &m)
 {
-	for (int y = 0; y < 4; ++y)
-		for (int x = 0; x < 4; ++x)
-			if (glm::isnan(m[y][x]))
-				puts("NAN! :(");
+    for (int y = 0; y < 4; ++y)
+        for (int x = 0; x < 4; ++x)
+            if (glm::isnan(m[y][x]))
+                puts("NAN! :(");
 }
 
 
@@ -121,19 +121,19 @@ const char *strGLError(GLenum glErr)
 void init (void)
 {
       // Get and display your OpenGL version
-	const GLubyte *Vstr;
-	Vstr = glGetString (GL_VERSION);
-	printf("Your OpenGL version is %s\n", Vstr);
+    const GLubyte *Vstr;
+    Vstr = glGetString (GL_VERSION);
+    printf("Your OpenGL version is %s\n", Vstr);
 
-	int n;
-	glGetIntegerv(GL_MAX_VERTEX_ATTRIBS, &n);
-	printf("GL_MAX_VERTEX_ATTRIBS: %d\n", n);
+    int n;
+    glGetIntegerv(GL_MAX_VERTEX_ATTRIBS, &n);
+    printf("GL_MAX_VERTEX_ATTRIBS: %d\n", n);
 
-	glGetIntegerv(GL_MAX_FRAGMENT_UNIFORM_COMPONENTS, &n);
-	printf("GL_MAX_FRAGMENT_UNIFORM_COMPONENTS: %d\n", n);
-	
-	// black window
-   	glClearColor (0.0, 0.0, 0.0, 1.0);
+    glGetIntegerv(GL_MAX_FRAGMENT_UNIFORM_COMPONENTS, &n);
+    printf("GL_MAX_FRAGMENT_UNIFORM_COMPONENTS: %d\n", n);
+    
+    // black window
+    glClearColor (0.0, 0.0, 0.0, 1.0);
 
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LESS);
@@ -144,12 +144,12 @@ void init (void)
     glShadeModel(GL_SMOOTH);
     glEnable(GL_LIGHTING);
     glEnable(GL_LIGHT0);
-	glEnable(GL_LIGHT1);
+    glEnable(GL_LIGHT1);
 
 #ifndef GL_MULTISAMPLE_ARB
 #define GL_MULTISAMPLE_ARB                      0x809D
 #endif
-	glEnable(GL_MULTISAMPLE_ARB);	
+    glEnable(GL_MULTISAMPLE_ARB);	
 }
 
 
@@ -157,21 +157,21 @@ void displayFPSOverlay(bool readyfortext)
 {
     unsigned char fps_str[64];
 
-	if (!readyfortext)
-	{
-		glDisable(GL_LIGHTING);
-		//glDisable(GL_TEXTURE_2D);
-		//glDisable(GL_COLOR_MATERIAL);
+    if (!readyfortext)
+    {
+        glDisable(GL_LIGHTING);
+        //glDisable(GL_TEXTURE_2D);
+        //glDisable(GL_COLOR_MATERIAL);
 
-		glMatrixMode(GL_MODELVIEW);
-		glLoadIdentity();
+        glMatrixMode(GL_MODELVIEW);
+        glLoadIdentity();
 
-		// draw some 2D text in Ortho projection :3
-		glMatrixMode(GL_PROJECTION);
-		glPushMatrix();
-		glLoadIdentity();
-		gluOrtho2D(0.0,(GLdouble) winWidth , 0.0,(GLdouble) winHeight);
-	}
+        // draw some 2D text in Ortho projection :3
+        glMatrixMode(GL_PROJECTION);
+        glPushMatrix();
+        glLoadIdentity();
+        gluOrtho2D(0.0,(GLdouble) winWidth , 0.0,(GLdouble) winHeight);
+    }
 
     glColor3ub(128, 128, 128);
     //glRasterPos2i(0,0);
@@ -183,7 +183,7 @@ void displayFPSOverlay(bool readyfortext)
         sprintf_s((char*)fps_str, 63, "FPS: %g", fps);
 #else
 #if !defined(__MINGW32__)
-		snprintf((char*)fps_str, 63, "FPS: %g", fps);
+        snprintf((char*)fps_str, 63, "FPS: %g", fps);
 #else
         sprintf((char*)fps_str, "FPS: %g", fps);
 #endif
@@ -195,7 +195,7 @@ void displayFPSOverlay(bool readyfortext)
     
     if (!readyfortext) glPopMatrix();
 
-	++frames;
+    ++frames;
 }
 
 
@@ -211,22 +211,22 @@ void winReshapeFcn (GLint newWidth, GLint newHeight)
 #if 0
     glMatrixMode (GL_PROJECTION);
     glLoadIdentity();
- 	
+    
     gluPerspective(viewangle, aspect, 5, 600.0); 
-	glGetDoublev(GL_PROJECTION_MATRIX, &perspective[0][0]);
+    glGetDoublev(GL_PROJECTION_MATRIX, &perspective[0][0]);
 #endif
 
 
-	perspective = glm::perspective(viewangle, aspect, 5.0f, 600.0f);
-	printf("perspective matrix: \n");
-	for (int y = 0; y < 4; ++y)
-	{
-		for (int x = 0; x < 4; ++x)
-		{
-			printf("%lf\t", perspective[y][x]);
-		}
-		printf("\n");
-	}
+    perspective = glm::perspective(viewangle, aspect, 5.0f, 600.0f);
+    printf("perspective matrix: \n");
+    for (int y = 0; y < 4; ++y)
+    {
+        for (int x = 0; x < 4; ++x)
+        {
+            printf("%lf\t", perspective[y][x]);
+        }
+        printf("\n");
+    }
 
     glViewport(0, 0, newWidth, newHeight);
 
@@ -238,20 +238,20 @@ void winReshapeFcn (GLint newWidth, GLint newHeight)
 // perhaps calculations should happen here too, though? or does it not matter?
 void animate(void)
 {
-	current_ticks = (double)SDL_GetTicks(); // in 1/1000s increments
+    current_ticks = (double)SDL_GetTicks(); // in 1/1000s increments
 
-	//fputc('.', stderr);
+    //fputc('.', stderr);
 
 
     double new_animation_time = (current_ticks - start_ticks)/1000.0;
 
     if (new_animation_time == animation_time)
     {
-		new_frame = false;
+        new_frame = false;
         return;
     } else 
     {
-		new_frame = true;
+        new_frame = true;
         old_animation_time = animation_time;
         animation_time = new_animation_time;
 
@@ -273,14 +273,14 @@ void animate(void)
 
     if (finalIdleFunc != NULL)  finalIdleFunc();
 
-	SDL_Delay(1); // let the OS work if it needs to
+    SDL_Delay(1); // let the OS work if it needs to
 }
 
 
 void set_start_ticks()
 {
-	start_ticks = prev_ticks = (double)SDL_GetTicks();
-	old_animation_time = animation_time = 0.0;
+    start_ticks = prev_ticks = (double)SDL_GetTicks();
+    old_animation_time = animation_time = 0.0;
     frames = 0;
 }
 
@@ -324,7 +324,7 @@ void base_key_down(unsigned char key, int x, int y)
 
         default:
             //puts("\007"); // James Bond
-			// that chime is so annoying on windows. I'm really sorry.
+            // that chime is so annoying on windows. I'm really sorry.
             fprintf(stderr, "scancode: %d\n", key);
         break;
     }
@@ -334,7 +334,7 @@ void base_key_down(unsigned char key, int x, int y)
 
 GLuint send_one_texture(char *image_filename)
 {
-	SDL_Surface *image, *proper;
+    SDL_Surface *image, *proper;
 #if SDL_BYTEORDER == SDL_BIG_ENDIAN
 #define rmask 0xff000000
 #define gmask 0x00ff0000
@@ -349,56 +349,60 @@ GLuint send_one_texture(char *image_filename)
 
 
     SDL_PixelFormat fmt = {NULL, 32, 4, 0, 0, 0, 0, 24, 16, 8, 0, rmask, gmask, bmask, 0, 0, 0xff}; // an RGBA 8bpp format for our sanity
-	GLuint tex;
+    GLuint tex;
 
     glEnable(GL_TEXTURE_2D);
     glGenTextures(1, &tex);
 
     if (glGetError())
-	{
-		fprintf(stderr, "glGenTextures() error for %s.\n", image_filename);
-		return 0;
-	}
+    {
+        fprintf(stderr, "glGenTextures() error for %s.\n", image_filename);
+        return 0;
+    }
 
     glBindTexture(GL_TEXTURE_2D, tex);
     glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR); 
-    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR_MIPMAP_LINEAR);
     glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_REPEAT);
 
-#if 0
-	// doesn't work
-	if (GLEW_EXT_texture_filter_anisotropic)
-	{
-		static bool have_max = false;
-		static int max = 0;
+    float aniso;
+    glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &aniso);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, aniso);
 
-		if (!have_max) 
-		{
-			glGetTexParameteriv(GL_TEXTURE_2D, GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &max); glErrorCheck();
-			printf("Max texture anisotropy: %d\n", max);
-			have_max = true;
-		}
-		if (max) glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, max); glErrorCheck();
-	}
+#if 0
+    // doesn't work
+    if (GLEW_EXT_texture_filter_anisotropic)
+    {
+        static bool have_max = false;
+        static int max = 0;
+
+        if (!have_max) 
+        {
+            glGetTexParameteriv(GL_TEXTURE_2D, GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &max); glErrorCheck();
+            printf("Max texture anisotropy: %d\n", max);
+            have_max = true;
+        }
+        if (max) glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, max); glErrorCheck();
+    }
 #endif
 
 #if 1
-	// an SGI extension from OpenGL 1.4 that seems to be missing
-	// http://www.opengl.org/registry/specs/SGIS/generate_mipmap.txt
-	if (GLEW_SGIS_generate_mipmap)
-	{		
+    // an SGI extension from OpenGL 1.4 that seems to be missing
+    // http://www.opengl.org/registry/specs/SGIS/generate_mipmap.txt
+    if (GLEW_SGIS_generate_mipmap)
+    {		
 #ifndef GL_GENERATE_MIPMAP
 #define GL_GENERATE_MIPMAP                0x8191
 #endif
-		glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_TRUE); 
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-	} else puts("no GL_SGIS_generate_mipmap");
+        glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_TRUE); 
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    } else puts("no GL_SGIS_generate_mipmap");
 #endif
 
     printf("loading %s\n", image_filename);
-	image = IMG_Load(image_filename);
-	if (image == NULL) { puts("load error!"); return 0; }
+    image = IMG_Load(image_filename);
+    if (image == NULL) { puts("load error!"); return 0; }
     proper = SDL_ConvertSurface(image, &fmt, SDL_SWSURFACE);
     if (proper == NULL)
     {
@@ -416,30 +420,30 @@ GLuint send_one_texture(char *image_filename)
 
 
     // to waste graphics memory, leave them as they are:
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, proper->w, proper->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, proper->pixels);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, proper->w, proper->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, proper->pixels);
         
     if (glGetError() != GL_NO_ERROR) fprintf(stderr, "Error! %d", glGetError());
 
 #if 0
-	// some OpenGL 3.x stuff that's not even in my damn header files
+    // some OpenGL 3.x stuff that's not even in my damn header files
 #ifdef glGenerateMipmap
-	glGenerateMipmap(GL_TEXTURE_2D); glErrorCheck();
+    glGenerateMipmap(GL_TEXTURE_2D); glErrorCheck();
 #endif
 #endif
 
-	SDL_FreeSurface(image);
-	SDL_FreeSurface(proper);
+    SDL_FreeSurface(image);
+    SDL_FreeSurface(proper);
 
-	return tex;
+    return tex;
 }
 
 
 // looking at things is hard sometimes, OK?
 void look_at(double *at)
 {
-	// deprecated...
-	// gluLookAt(at[0], at[1], at[2], at[3], at[4], at[5], 0, 1, 0); // up is always up, otherwise I get motion sickness; deal with it.
-	view = glm::lookAt(glm::dvec3(at[0], at[1], at[2]), glm::dvec3(at[3], at[4], at[5]), glm::dvec3(0.0, 1.0, 0.0));
+    // deprecated...
+    // gluLookAt(at[0], at[1], at[2], at[3], at[4], at[5], 0, 1, 0); // up is always up, otherwise I get motion sickness; deal with it.
+    view = glm::lookAt(glm::dvec3(at[0], at[1], at[2]), glm::dvec3(at[3], at[4], at[5]), glm::dvec3(0.0, 1.0, 0.0));
 }
 
 
@@ -453,10 +457,10 @@ int main (int argc, char** argv)
     glutInit (&argc, argv); // do this before constructors start to init 
                             // other GL stuff
 
-	SDL_Init(SDL_INIT_AUDIO | SDL_INIT_TIMER);
-	atexit(SDL_Quit);
+    SDL_Init(SDL_INIT_AUDIO | SDL_INIT_TIMER);
+    atexit(SDL_Quit);
 
-	Mix_OpenAudio(MIX_DEFAULT_FREQUENCY, AUDIO_S16SYS, 2, 1024); // 1024 might be low but whatever
+    Mix_OpenAudio(MIX_DEFAULT_FREQUENCY, AUDIO_S16SYS, 2, 1024); // 1024 might be low but whatever
 
     int flags = IMG_INIT_JPG | IMG_INIT_PNG;
     int initted=IMG_Init(flags);
@@ -479,33 +483,34 @@ int main (int argc, char** argv)
     // Set Window Size
     glutInitWindowSize (winWidth, winHeight);
     // Set Window Title
-    glutCreateWindow ("Greg Velichansky, CMSC405 final project, a pool game of some sort.");
-	
-	glewExperimental = GL_TRUE;
-	GLenum err = glewInit();
-	if (GLEW_OK != err)
-	{
-	  /* Problem: glewInit failed, something is seriously wrong. */
-	  fprintf(stderr, "Error: %s\n", glewGetErrorString(err));
-	  exit(1);
-	}
-	fprintf(stdout, "Status: Using GLEW %s\n", glewGetString(GLEW_VERSION));
-	
+    //glutCreateWindow ("Greg Velichansky, CMSC405 final project, a pool game of some sort.");
+    glutCreateWindow("grilliards interplanetary");
+    
+    glewExperimental = GL_TRUE;
+    GLenum err = glewInit();
+    if (GLEW_OK != err)
+    {
+      /* Problem: glewInit failed, something is seriously wrong. */
+      fprintf(stderr, "Error: %s\n", glewGetErrorString(err));
+      exit(1);
+    }
+    fprintf(stdout, "Status: Using GLEW %s\n", glewGetString(GLEW_VERSION));
+    
     // Initialize
     init ( );
 
     // Window reshape call
     glutReshapeFunc (winReshapeFcn);
     glutKeyboardFunc (base_key_down);
-	set_start_ticks();
-	glutIdleFunc(animate);
+    set_start_ticks();
+    glutIdleFunc(animate);
 
-	winReshapeFcn(winWidth, winHeight);
+    winReshapeFcn(winWidth, winHeight);
 
     PoolGame::gogogo(); 
 
     glutMainLoop ( );
 
-	Mix_CloseAudio();
+    Mix_CloseAudio();
     //delete pool;
 }

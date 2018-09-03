@@ -16,7 +16,7 @@ namespace PoolGame
 {
 
 // use GLUquadric for sphere objects
-const double PoolBall::diameter = 5.7; // standard American pool balls are 57mm (=5.7cm) 
+const double PoolBall::diameter = 5.7; // standard American pool balls are 57mm (=5.7cm)  err what
 const double PoolBall::rolling_friction = 0.15;
 const double PoolBall::COrestitution = 0.95;;
 
@@ -28,11 +28,11 @@ PoolBall::PoolBall(PoolTable *t, double initx, double initz, double dummy, int i
 {
     inplay = true;
 
-	movement_remaining = 0.0;
+    movement_remaining = 0.0;
 
-	switch(index)
-	{
-	case 0:
+    switch(index)
+    {
+    case 0:
         if (state == intro)
         {
             // for the intro scene, send the cue ball down the table
@@ -42,30 +42,30 @@ PoolBall::PoolBall(PoolTable *t, double initx, double initz, double dummy, int i
         }
 
 
-	default:
+    default:
         dx = dz = 0.0;
-		
-		//dx = rand()%(max_speed/2) - max_speed/4;
-		
-		//dz = rand()%(max_speed/2) - max_speed/4;
+        
+        //dx = rand()%(max_speed/2) - max_speed/4;
+        
+        //dz = rand()%(max_speed/2) - max_speed/4;
 
-		break;
-	}
+        break;
+    }
 
-	switch(mode)
-	{
-	case grilliards:
-		tex = textures[NUM_BEEF];
-		name = bally[NUM_BEEF].name;
-		mass = 0.8;
-		break;
+    switch(mode)
+    {
+    case grilliards:
+        tex = textures[NUM_BEEF];
+        name = bally[NUM_BEEF].name;
+        mass = 0.8;
+        break;
 
-	default:
-		tex = textures[index % NUM_TEXTURES];
-		mass = use_mass ? bally[index % NUM_TEXTURES].mass : 1;
-		name = bally[index % NUM_TEXTURES].name;
-		break;
-	}
+    default:
+        tex = textures[index % NUM_TEXTURED_BALLS];
+        mass = use_mass ? bally[index % NUM_TEXTURED_BALLS].mass : 1;
+        name = bally[index % NUM_TEXTURED_BALLS].name;
+        break;
+    }
 }
 
 // destructor
@@ -78,47 +78,47 @@ PoolBall::~PoolBall()
 // draw the pool ball!
 void PoolBall::render(glm::dmat4 &parent_model)
 {
-	glm::dmat4 model = parent_model * glm::translate(glm::dmat4(1.0), glm::dvec3(x, diameter/2, z)) * rotation * glm::scale(glm::dmat4(1.0), glm::dvec3(diameter/2));
+    glm::dmat4 model = parent_model * glm::translate(glm::dmat4(1.0), glm::dvec3(x, diameter/2, z)) * rotation * glm::scale(glm::dmat4(1.0), glm::dvec3(diameter/2));
 
-	mesh.render(tex, model);
+    mesh.render(tex, model);
 
 #if 0
-	glUseProgram(0); glErrorCheck();
-	
-	glMatrixMode(GL_MODELVIEW);
-	glLoadIdentity();
-	glMultMatrixd(&view[0][0]);
-	glMultMatrixd(&parent_model[0][0]);
-	glMatrixMode(GL_PROJECTION);
-	//glLoadIdentity();
+    glUseProgram(0); glErrorCheck();
+    
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+    glMultMatrixd(&view[0][0]);
+    glMultMatrixd(&parent_model[0][0]);
+    glMatrixMode(GL_PROJECTION);
+    //glLoadIdentity();
 extern double wide_view[];	
-	//gluLookAt(eye[0], eye[1], eye[2], wide_view[3], wide_view[4], wide_view[5], 0, 1, 0);
-	glLoadMatrixd(&perspective[0][0]);
-	
-	glEnable(GL_DEPTH_TEST);
-	glBegin(GL_LINES);
+    //gluLookAt(eye[0], eye[1], eye[2], wide_view[3], wide_view[4], wide_view[5], 0, 1, 0);
+    glLoadMatrixd(&perspective[0][0]);
+    
+    glEnable(GL_DEPTH_TEST);
+    glBegin(GL_LINES);
 #if 0
-	glVertex4f(x, 0, z, 1.0f);
-	glVertex4f(light_position[0], light_position[1], light_position[2], 1.0f);
+    glVertex4f(x, 0, z, 1.0f);
+    glVertex4f(light_position[0], light_position[1], light_position[2], 1.0f);
 #endif
-	
+    
 #if 0
-	for (int i = 0; i < vertices.size(); ++i)
-	{
-		glVertex3f(vertices[i][0], vertices[i][1], vertices[i][2]);
-		glVertex3f(vertices[i][0] + normals[i][0], vertices[i][1] + normals[i][1], vertices[i][2] + normals[i][2]);
-	}
+    for (int i = 0; i < vertices.size(); ++i)
+    {
+        glVertex3f(vertices[i][0], vertices[i][1], vertices[i][2]);
+        glVertex3f(vertices[i][0] + normals[i][0], vertices[i][1] + normals[i][1], vertices[i][2] + normals[i][2]);
+    }
 #endif
-	glEnd(); glErrorCheck();
+    glEnd(); glErrorCheck();
 #endif
-	
-	glDisable(GL_TEXTURE_2D);
+    
+    glDisable(GL_TEXTURE_2D);
 }
 
 // distance squared to another ball
 double PoolBall::distance_squared(PoolBall& other)
 {
-	return pow(x-other.x, 2) + pow(z-other.z, 2);
+    return pow(x-other.x, 2) + pow(z-other.z, 2);
 }
 
 
@@ -131,15 +131,15 @@ int PoolBall_distance_cmp(const void *a, const void *b)
     PoolBall *B = (PoolBall*)b;
 
     double distance = current_ball->distance_squared(*A) - current_ball->distance_squared(*B);
-	if (distance < 0.0) return -1;
-	if (distance > 0.0) return 1;
-	return 0; // unlikely
+    if (distance < 0.0) return -1;
+    if (distance > 0.0) return 1;
+    return 0; // unlikely
 }
 
 // slow your roll
 void PoolBall::friction(double time_fraction)
 {
-	if (dx == 0.0 && dz == 0.0) return;
+    if (dx == 0.0 && dz == 0.0) return;
 
     dx *= 1.0-(time_fraction*rolling_friction/* *mass */); // forget mass in this calculation, it's unfun
     dz *= 1.0-(time_fraction*rolling_friction/* *mass */);
@@ -151,27 +151,27 @@ void PoolBall::friction(double time_fraction)
 // this is to be called when the ball has been repositioned to the point of collision with a wall
 void PoolBall::test_pocket()
 {
-	bool out = false;
+    bool out = false;
 
-	if (state == intro || state == over || state == menu || state == help) return;
+    if (state == intro || state == over || state == menu || state == help) return;
 
-	if (abs(z) < diameter) out = true; // side pockets
-	if (abs(z) > table->length/2-diameter && abs(x) > table->width/2-diameter) out = true; // corner pockets... too big? *shrug*
+    if (abs(z) < diameter) out = true; // side pockets
+    if (abs(z) > table->length/2-diameter && abs(x) > table->width/2-diameter) out = true; // corner pockets... too big? *shrug*
 
-	if (out)
-	{
-		if (index == 0)
-		{
-			// scratched the cue ball
-			state = over;
-			inplay = false;
-			sadwhistle();
-		} else
-		{
-			squirble();
-			inplay = false;
-		}
-	}
+    if (out)
+    {
+        if (index == 0)
+        {
+            // scratched the cue ball
+            state = over;
+            inplay = false;
+            sadwhistle();
+        } else
+        {
+            squirble();
+            inplay = false;
+        }
+    }
 
 }
 
@@ -181,39 +181,39 @@ void PoolBall::test_pocket()
 // this needs the full declaration of PoolTable to function, hence this location....
 void PoolBall::move(double base_time_fraction)
 {
-	if (movement_remaining == 0.0) return;
+    if (movement_remaining == 0.0) return;
 
-	// sanity check...
-	if (dx*base_time_fraction > table->length || dz*base_time_fraction > table->length) 
-	{
-		fprintf(stderr, "velocity insanity.\n");
-		return;
-	}
+    // sanity check...
+    if (dx*base_time_fraction > table->length || dz*base_time_fraction > table->length) 
+    {
+        fprintf(stderr, "velocity insanity.\n");
+        return;
+    }
 
-	if (!inplay) return;
+    if (!inplay) return;
 
-	double time_fraction = base_time_fraction * movement_remaining;
+    double time_fraction = base_time_fraction * movement_remaining;
 
-	double fdx = dx * time_fraction;
-	double fdz = dz * time_fraction;
+    double fdx = dx * time_fraction;
+    double fdz = dz * time_fraction;
 
-	// test for collisions with the walls
-	// this uses some algorithms based on the collision of a ray with a plane, in 2D
-	// the original 3D formula is here: http://www.cs.princeton.edu/courses/archive/fall00/cs426/lectures/raycast/sld017.htm
+    // test for collisions with the walls
+    // this uses some algorithms based on the collision of a ray with a plane, in 2D
+    // the original 3D formula is here: http://www.cs.princeton.edu/courses/archive/fall00/cs426/lectures/raycast/sld017.htm
     // or here: http://cgafaq.info/wiki/Ray_Plane_Intersection
     // or dozens of other pages on the net, some with fewer typos than others
 
-	// though they're not really specific to any number of dimensions...
+    // though they're not really specific to any number of dimensions...
 
-	// t = N·(Q-E) / N·D
-	// where N is a normal vector of the plane, Q is a point on the plane, 
+    // t = N·(Q-E) / N·D
+    // where N is a normal vector of the plane, Q is a point on the plane, 
     // E is the ray origin,
-	// and D is the ray's direction vector
-	// if t < 0, the plane is behind the origin
-	// if N·D=0, the ray is parallel to the plane
-	// if t >=0, the intersection point is E + tD
+    // and D is the ray's direction vector
+    // if t < 0, the plane is behind the origin
+    // if N·D=0, the ray is parallel to the plane
+    // if t >=0, the intersection point is E + tD
 
-	double NdotD, numerator, tx, tz;
+    double NdotD, numerator, tx, tz;
 
     double Qx, Qz;
     double Nx, Nz;
@@ -295,11 +295,11 @@ void PoolBall::move(double base_time_fraction)
             // {x,y} + {fdx,fdy} * tx = the point where the ball hits the table
 
             actually_reposition(fdx*tx, fdz*tx);
-			test_pocket();
+            test_pocket();
 
             dx *= -1; // BOUNCE! :D
 
-			movement_remaining = t_rest;
+            movement_remaining = t_rest;
 
             return move(time_fraction);
         }
@@ -312,11 +312,11 @@ void PoolBall::move(double base_time_fraction)
             // {x,y} + {fdx,fdy} * tx = the point where the ball hits the table
 
             actually_reposition(fdx*tz, fdz*tz);
-			test_pocket();
+            test_pocket();
 
             dz *= -1; // BOUNCE! :D
 
-			movement_remaining = t_rest;
+            movement_remaining = t_rest;
 
             return move(time_fraction);
         }
@@ -333,7 +333,7 @@ void PoolBall::move(double base_time_fraction)
     long double a, b, c;
 
     // sort the balls by distance, check nearest for collisions first
-    PoolBall *sorted[table->maxballs];
+    PoolBall *sorted[PoolTable::maxballs];
     for (int r = 0, w = 0; r < table->maxballs; ++w, ++r) sorted[w] = table->ball[r]; 
     current_ball = this; // for PoolBall_distance_cmp(); see its implementation
     qsort(sorted, table->balls, sizeof(PoolBall*), PoolBall_distance_cmp);
@@ -345,35 +345,35 @@ void PoolBall::move(double base_time_fraction)
 
         if (!(sorted[i]->inplay)) continue; // Don't collide with balls in pockets...
 
-		Pabx =  x - sorted[i]-> x; // vector in the direction of the other ball? or whatever? derp
+        Pabx =  x - sorted[i]-> x; // vector in the direction of the other ball? or whatever? derp
         Pabz =  z - sorted[i]-> z;
 
-		// sanity-check current distance!
-		if ((Pabx*Pabx + Pabz*Pabz) < diameter*diameter)
-		{
-			//fputs("unfortunate intersection.\n", stderr);
-			handle_collision(*(sorted[i]), 0.0, time_fraction);
-			fdx = dx * time_fraction;
-			fdz = dz * time_fraction; 
-			//break; // Just stop doing things, algorithm. Clearly you're not good at them.
-		}
+        // sanity-check current distance!
+        if ((Pabx*Pabx + Pabz*Pabz) < diameter*diameter)
+        {
+            //fputs("unfortunate intersection.\n", stderr);
+            handle_collision(*(sorted[i]), 0.0, time_fraction);
+            fdx = dx * time_fraction;
+            fdz = dz * time_fraction; 
+            //break; // Just stop doing things, algorithm. Clearly you're not good at them.
+        }
 
 
         Vabx = fdx - sorted[i]->dx*time_fraction; // relative velocity vector
         Vabz = fdz - sorted[i]->dz*time_fraction;
-		
+        
 
 
         if (abs(Vabx) < 0.00000001) Vabx = 0.0;
         if (abs(Vabz) < 0.00000001) Vabz = 0.0;
 
-		if (Vabx == 0.0 && Vabz == 0.0) continue; // no relative motion? clearly not going to collide, huh.
+        if (Vabx == 0.0 && Vabz == 0.0) continue; // no relative motion? clearly not going to collide, huh.
 
         a = dotProduct(Vabx, Vabz, Vabx, Vabz);
         b = 2 * dotProduct(Pabx, Pabz, Vabx, Vabz);
         c = dotProduct(Pabx, Pabz, Pabx, Pabz) - diameter*diameter;
         
-		// b^2-4ac is the discriminant of the quadratic polynomial
+        // b^2-4ac is the discriminant of the quadratic polynomial
         if ((b*b - 4*a*c) >= 0.0)
         {
             // we have one or two roots
@@ -382,36 +382,36 @@ void PoolBall::move(double base_time_fraction)
             t0 = quadratic_formula0(a, b, c);
             t1 = quadratic_formula1(a, b, c);
 
-			if (t0 < 0.0 && t1 < 0.0) { 
-				//puts("past collision?"); 
-				continue; 
-			}
-			
-			if (t0 < 0.0) t = t1;
-			else if (t1 < 0.0) t = t0;
-			else if (t0 < t1) t = t0;
-			else t = t1;
+            if (t0 < 0.0 && t1 < 0.0) { 
+                //puts("past collision?"); 
+                continue; 
+            }
+            
+            if (t0 < 0.0) t = t1;
+            else if (t1 < 0.0) t = t0;
+            else if (t0 < t1) t = t0;
+            else t = t1;
 
             //printf("%g, %g\n", t1, t0);
 
             if (t >= 0.0  && t <= 1.0)
             {
-				/*
+                /*
                 printf("OMG bonk: %g, %g?!\n", (double)t, (double)
                     (pow((x+t*fdx) - (sorted[i]->x + t * sorted[i]->dx * time_fraction), 2) + 
                     pow((z+t*fdz) - (sorted[i]->z + t * sorted[i]->dz * time_fraction), 2) -
                     pow(diameter, 2)));
-				*/
+                */
 
-				handle_collision(*(sorted[i]), t, time_fraction);
-				time_fraction = base_time_fraction * movement_remaining; // movement_remaining was updated by handle_collision()... 
-				fdx = dx * time_fraction;
-				fdz = dz * time_fraction; // now we can keep looping without recursing, yes?
+                handle_collision(*(sorted[i]), t, time_fraction);
+                time_fraction = base_time_fraction * movement_remaining; // movement_remaining was updated by handle_collision()... 
+                fdx = dx * time_fraction;
+                fdz = dz * time_fraction; // now we can keep looping without recursing, yes?
             }
         }
     }
 
-	movement_remaining = 0.0;
+    movement_remaining = 0.0;
 
     actually_reposition(fdx, fdz); // no collisions, simple case
 }
@@ -422,12 +422,12 @@ void PoolBall::actually_reposition(double fdx, double fdz)
     x += fdx;
     z += fdz;
 
-	double distance = sqrt(fdx*fdx + fdz*fdz);
-	if (distance < std::numeric_limits<double>::epsilon()) return; 
-	// a distance of ~0 results in a bogus axis and an angle of ~0, which fill the rotation matrix with NaNs
+    double distance = sqrt(fdx*fdx + fdz*fdz);
+    if (distance < std::numeric_limits<double>::epsilon()) return; 
+    // a distance of ~0 results in a bogus axis and an angle of ~0, which fill the rotation matrix with NaNs
 
-	glm::dvec3 axis(fdz, 0, -fdx);
-	rotation = glm::rotate(glm::dmat4(1.0), 360.0 * (distance /(M_PI * diameter)), glm::normalize(axis)) * rotation;
+    glm::dvec3 axis(fdz, 0, -fdx);
+    rotation = glm::rotate(glm::dmat4(1.0), (M_PI*2) * (distance /(M_PI * diameter)), glm::normalize(axis)) * rotation;
 }
 
 
@@ -457,70 +457,70 @@ void PoolBall::actually_reposition(double fdx, double fdz)
 //
 void PoolBall::handle_collision(PoolBall& other, long double t, double time_fraction)
 {
-	if (mass == 0.0 || other.mass == 0.0) return; // ephemeral entities do not collide
+    if (mass == 0.0 || other.mass == 0.0) return; // ephemeral entities do not collide
 
-	// roll balls to the point of impact
-	if (t != 0.0 && time_fraction != 0.0)
-	{
-		actually_reposition(dx*t*time_fraction, dz*t*time_fraction);
-		movement_remaining -= t;
+    // roll balls to the point of impact
+    if (t != 0.0 && time_fraction != 0.0)
+    {
+        actually_reposition(dx*t*time_fraction, dz*t*time_fraction);
+        movement_remaining -= t;
 
-		other.actually_reposition(other.dx*t*time_fraction, other.dz*t*time_fraction);
-		other.movement_remaining -= t;
-	}
+        other.actually_reposition(other.dx*t*time_fraction, other.dz*t*time_fraction);
+        other.movement_remaining -= t;
+    }
 
-	// unit normal and unit tangent vectors
-	double uNx = other.x - x; // normal
-	double uNz = other.z - z;
+    // unit normal and unit tangent vectors
+    double uNx = other.x - x; // normal
+    double uNz = other.z - z;
 
-	double mag = sqrt(uNx*uNx + uNz*uNz); 
+    double mag = sqrt(uNx*uNx + uNz*uNz); 
 
-	uNx /= mag; // normalized (unit) normal
-	uNz /= mag;
+    uNx /= mag; // normalized (unit) normal
+    uNz /= mag;
 
-	// untangle stupid-ass intersected spheres. ugh!
-	if (abs(t) < std::numeric_limits<double>::epsilon())
-	{
-		other.actually_reposition((diameter-mag) * uNx * 1.0001, (diameter-mag) * uNz * 1.0001);
-		return handle_collision(other, -1.0, 0); // uNz, uNz, etc. have to be recalculated
-	}
+    // untangle stupid-ass intersected spheres. ugh!
+    if (abs(t) < std::numeric_limits<double>::epsilon())
+    {
+        other.actually_reposition((diameter-mag) * uNx * 1.0001, (diameter-mag) * uNz * 1.0001);
+        return handle_collision(other, -1.0, 0); // uNz, uNz, etc. have to be recalculated
+    }
 
 
 
-	double uTx = -uNz; // unit tangent
-	double uTz = uNx; 
+    double uTx = -uNz; // unit tangent
+    double uTz = uNx; 
 
-	// scalar projections of velocities onto above vectors
-	double v1n = dotProduct(uNx, uNz, dx, dz);
-	double v1t = dotProduct(uTx, uTz, dx, dz);
-	double v2n = dotProduct(uNx, uNz, other.dx, other.dz);
-	double v2t = dotProduct(uTx, uTz, other.dx, other.dz);
+    // scalar projections of velocities onto above vectors
+    double v1n = dotProduct(uNx, uNz, dx, dz);
+    double v1t = dotProduct(uTx, uTz, dx, dz);
+    double v2n = dotProduct(uNx, uNz, other.dx, other.dz);
+    double v2t = dotProduct(uTx, uTz, other.dx, other.dz);
 
-	// tangential velocities don't change in a purely elastic collision
+    // tangential velocities don't change in a purely elastic collision
 
     // apply coefficient of restitution to the velocity projections
     v1n *= COrestitution;
     v2n *= COrestitution;
 
-	// normal velocities do:
-	double v1n_prime = (v1n * (mass - other.mass) + 2.0 * other.mass * v2n) / (mass + other.mass);
-	double v2n_prime = (v2n * (other.mass - mass) + 2.0 * mass       * v1n) / (mass + other.mass);
+    // normal velocities do:
+    double v1n_prime = (v1n * (mass - other.mass) + 2.0 * other.mass * v2n) / (mass + other.mass);
+    double v2n_prime = (v2n * (other.mass - mass) + 2.0 * mass       * v1n) / (mass + other.mass);
 
 
-	// the new velocity vectors are vXn_prime * uN + vXt * uT
+    // the new velocity vectors are vXn_prime * uN + vXt * uT
 
-	dx = v1n_prime * uNx + v1t * uTx;
-	dz = v1n_prime * uNz + v1t * uTz;
+    dx = v1n_prime * uNx + v1t * uTx;
+    dz = v1n_prime * uNz + v1t * uTz;
 
-	other.dx = v2n_prime * uNx + v2t * uTx;
-	other.dz = v2n_prime * uNz + v2t * uTz;
+    other.dx = v2n_prime * uNx + v2t * uTx;
+    other.dz = v2n_prime * uNz + v2t * uTz;
 
 
     // play a collision sound
-	Mix_PlayChannel(index%8, Sounds::ballclack, 0);
-	Mix_Volume(index%8, (int) (64.0 * ((abs(v1n_prime) + abs(v2n_prime)) / (max_speed*2.0)))); // scale the volume to the total normal velocity relative to max speed that two balls could have
-	// 128 is max channel volume but it's rude to blast max volume at people
-	//next_channel();
+    Mix_PlayChannel(index%8, Sounds::ballclack, 0);
+    Mix_Volume(index%8, (int) (64.0 * ((abs(v1n_prime) + abs(v2n_prime)) / (max_speed*2.0)))); // scale the volume to the total normal velocity relative to max speed that two balls could have
+    // 128 is max channel volume but it's rude to blast max volume at people
+    //next_channel();
 }
 }
 

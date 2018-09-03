@@ -1,4 +1,5 @@
 #include <GL/glew.h>
+#include <GL/glut.h>
 
 #include "PoolGame.h"
 #include "PoolBall.h"
@@ -15,24 +16,24 @@ namespace PoolGame
 {
 
 void PoolTable::clear_balls()
-	{
-		if (balls > 0)
-		{
-			for (int i = 0; i < balls; ++i)
-			{
-				if (ball[i] != NULL) delete ball[i];
-				ball[i] = NULL;
-			}
-		}
-	}
+    {
+        if (balls > 0)
+        {
+            for (int i = 0; i < balls; ++i)
+            {
+                if (ball[i] != NULL) delete ball[i];
+                ball[i] = NULL;
+            }
+        }
+    }
 
 PoolTable::PoolTable()
     {
         fprintf(stderr, "PoolTable() reporting...\n");
 
         balls = 0; 
-		memset(ball, 0, sizeof(void*)*maxballs);
-		texture = -1;
+        memset(ball, 0, sizeof(void*)*maxballs);
+        texture = -1;
     }
 
 
@@ -40,7 +41,7 @@ PoolTable::PoolTable()
 void PoolTable::render(glm::dmat4 &parent_model)
     {
 
-		glDisable(GL_TEXTURE_2D);
+        glDisable(GL_TEXTURE_2D);
 
         glMaterialf(GL_FRONT, GL_SHININESS, 110.0); // not too shiny! hurgh. 0 is max shininess, 128 is min.
 
@@ -103,12 +104,14 @@ void PoolTable::render(glm::dmat4 &parent_model)
 #endif
 
 #if 1
-		// this is a really quick way of drawing a slab of the proper dimensions but the polygons won't get lit up well by positional lights
-		glm::dmat4 table_model = parent_model * glm::scale(glm::dmat4(1.0), glm::dvec3(width/2, 10.0, length/2)); // cube mesh is 2x2x2
-		cube.render(texture, table_model);
+        // this is a really quick way of drawing a slab of the proper dimensions but the polygons won't get lit up well by positional lights
+        //glm::dmat4 table_model = parent_model * glm::scale(glm::dmat4(1.0), glm::dvec3(width/2, 10.0, length/2)); // cube mesh is 2x2x2
+
+        auto table_model = parent_model; // model should be of the correct dimensions in the mesh file
+        cube.render(texture, table_model);
 
 #endif
-		glm::dmat4 model = parent_model * glm::translate(glm::dmat4(1.0), glm::dvec3(-width/2, 5.0, -length/2));
+        glm::dmat4 model = parent_model * glm::translate(glm::dmat4(1.0), glm::dvec3(-width/2, 5.0, -length/2));
 
 
         // this draws a table surface out of ~38000 triangles which is really
@@ -116,33 +119,33 @@ void PoolTable::render(glm::dmat4 &parent_model)
         // and a good fragment shader. That's something for the next level
         // of the class, though, right?
 #if 0
-		for(int x = 0; x < width-1; x++)
-		{
-			glBegin(GL_TRIANGLE_STRIP); // GL_BACON_STRIP, mmm, delicious
-			glNormal3d(0, 1, 0);
-			for(int z = 0; z < length; z++)
-			{
+        for(int x = 0; x < width-1; x++)
+        {
+            glBegin(GL_TRIANGLE_STRIP); // GL_BACON_STRIP, mmm, delicious
+            glNormal3d(0, 1, 0);
+            for(int z = 0; z < length; z++)
+            {
                 // OH YEAH, VERTEX-BASED SHADOWS LIKE IT'S 1995!
                 GLfloat s = 1-shadowmap[z][x+1];
                 glColor3f(0.25*s, 1.0*s, 0.25*s);
-				glVertex3d(x+1, 0, z);
+                glVertex3d(x+1, 0, z);
 
                 s = 1-shadowmap[z][x];
                 glColor3f(0.25*s, 1.0*s, 0.25*s);
-				glVertex3d(x, 0,   z);
-			}
-			glEnd();
-		}
+                glVertex3d(x, 0,   z);
+            }
+            glEnd();
+        }
 #endif
 
 
         //glDisable(GL_COLOR_MATERIAL);
 
-		// draw "pockets"
-		// except the table should really be a mesh that we load and I'm not spending a lot of time on these :/
+        // draw "pockets"
+        // except the table should really be a mesh that we load and I'm not spending a lot of time on these :/
 
         glColor3ub(255, 255, 0);
-#if 0        
+#if 1        
         glPushMatrix();
         glTranslated(width/2, 10-PoolBall::diameter*2, 0);
         glutSolidCube(PoolBall::diameter*2);
@@ -178,37 +181,37 @@ void PoolTable::render(glm::dmat4 &parent_model)
         // draw the balls
         //
 
-		model = parent_model * glm::translate(glm::dmat4(1.0), glm::dvec3(0, 5+ ball[0]->diameter, 0)); 
+        model = parent_model * glm::translate(glm::dmat4(1.0), glm::dvec3(0, 5+ ball[0]->diameter, 0)); 
 
-		if (balls > 0)
-		{
-			ballsleft = NUM_TEXTURES;
+        if (balls > 0)
+        {
+            ballsleft = NUM_TEXTURED_BALLS;
 
-			//glTranslated(0, 5 + ball[0]->diameter, 0);
+            //glTranslated(0, 5 + ball[0]->diameter, 0);
 
-			for (int i = 0; i < balls; ++i)
-			{
-				if (ball[i]->inplay) ball[i]->render(model);
-				else --ballsleft;
-			}
+            for (int i = 0; i < balls; ++i)
+            {
+                if (ball[i]->inplay) ball[i]->render(model);
+                else --ballsleft;
+            }
 
-			ballsleft--; // don't count the cue ball, eh
-		}
+            ballsleft--; // don't count the cue ball, eh
+        }
     }
 
 void PoolTable::update(void)
-	{
-		for (int i = 0; i < balls; ++i)
-		{
-			ball[i]->movement_remaining += 1.0;
-		}
+    {
+        for (int i = 0; i < balls; ++i)
+        {
+            ball[i]->movement_remaining += 1.0;
+        }
 
-		for (int i = 0; i < balls; ++i)
-		{
-			ball[i]->move(animation_time - old_animation_time);
-			ball[i]->friction(animation_time - old_animation_time);
-		}
-	}
+        for (int i = 0; i < balls; ++i)
+        {
+            ball[i]->move(animation_time - old_animation_time);
+            ball[i]->friction(animation_time - old_animation_time);
+        }
+    }
 
 SimpleMesh PoolTable::cube;
 const double PoolTable::width = 137; // 4.5 feet = 137.16cm

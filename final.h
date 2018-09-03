@@ -35,13 +35,13 @@ GLuint send_one_texture(char *bmp_filename);
 #if 0
 static double dotProduct(double A[2], double B[2])
 {
-	return A[0]*B[0] + A[1]*B[1];
+    return A[0]*B[0] + A[1]*B[1];
 }
 #endif
 
 static double dotProduct(double A0, double A1, double B0, double B1)
 {
-	return A0*B0 + A1*B1;
+    return A0*B0 + A1*B1;
 }
 
 static long double quadratic_formula0(long double a, long double b, long double c)
@@ -73,16 +73,16 @@ const char *strGLError(GLenum glErr);
         { \
             printf("%s:%d %s %s\n", __FILE__, __LINE__, ": glGetError() complaint: ", strGLError(glErr));\
         } while (((glErr = glGetError()) != GL_NO_ERROR));\
-		exit(1);\
+        exit(1);\
     }\
 }
 
 inline glm::mat4 &operator << (glm::mat4 &a, glm::dmat4 b)
 {
-	float *_a = &a[0][0];
-	double *_b = &b[0][0];
-	
-	for (int i = 0; i < 16; ++i) _a[i] = _b[i];
-	
-	return a;
+    float *_a = &a[0][0];
+    double *_b = &b[0][0];
+    
+    for (int i = 0; i < 16; ++i) _a[i] = (float) _b[i];
+    
+    return a;
 }

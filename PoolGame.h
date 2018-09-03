@@ -9,7 +9,7 @@ namespace PoolGame
 class PoolTable;
 class PoolBall;
 
-#define NUM_TEXTURES 16
+#define NUM_TEXTURED_BALLS 16
 
 // shader program id
 extern GLuint idProgram;
@@ -48,7 +48,7 @@ typedef enum poolgamestate_enum
     achiev, // achievements screen, like quantity of beer consumed,
             // number of times scratched in a single game, etc.
     fight,  // cues aren't the best melee weapons but they'll do in a pinch
-	confirm,// you sure you want to quit?
+    confirm,// you sure you want to quit?
     nada
 } PoolGameState;
 
@@ -56,8 +56,8 @@ extern PoolGameState state;
 
 typedef enum poolgamemode_enum
 {
-	amazeballs,
-	grilliards
+    amazeballs,
+    grilliards
 } PoolGameMode;
 
 extern PoolGameMode mode;
@@ -69,9 +69,9 @@ typedef struct BallInfos_struct
     char *name;
 } BallInfos;
 
-extern BallInfos bally[NUM_TEXTURES];
+extern BallInfos bally[NUM_TEXTURED_BALLS];
 
-extern GLint textures[NUM_TEXTURES];
+extern GLint textures[NUM_TEXTURED_BALLS];
 
 // the number of the beef:
 #define NUM_BEEF 7

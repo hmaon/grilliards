@@ -59,7 +59,8 @@ void main(){
 		pf = pow(nDotHV, shininess);
 	}
 #else
-	vec3 VP = normalize(toLight_viewspace[0]);
+	//vec3 VP = normalize(toLight_viewspace[0]);
+	vec3 VP = toLight_viewspace[0];
 	vec3 normal = normalize(normal_viewspace);
 	vec3 halfVector = normalize(VP + eye);
 
