@@ -529,6 +529,18 @@ void display1(void)
     // cue "stick"
     // 
 
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+    //GLdouble marr[16] = { 0.0 };
+    //for (int i = 0; i < 16; ++i) marr[i] = view[i / 4][i % 4];
+    glMultMatrixd(&view[0][0]);
+    glTranslated(0, 10, 0);
+
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    glMultMatrixd(&perspective[0][0]);
+
+
     if (state == cue)
     {
         glDisable(GL_TEXTURE_2D);
@@ -829,7 +841,7 @@ void load_assets()
     idEye = glGetUniformLocation(idProgram, "eye_position"); glErrorCheck();
 
 
-    if (!PoolBall::mesh.loaded) PoolBall::mesh.load("data/uvsphere.obj");
+    if (!PoolBall::mesh.loaded) PoolBall::mesh.load("data/ico4uv.obj");
 
     if (textures[0] == -1)
     {
