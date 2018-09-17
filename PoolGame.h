@@ -14,8 +14,8 @@ class PoolBall;
 // shader program id
 extern GLuint idProgram;
 
-// MVP matrix id, needed everywhere...
-extern GLuint idMVP, idMV, idN, idTex, idEye;
+// MVP matrix and other ids, needed everywhere...
+extern GLuint idMVP, idMV, idN, idTex, idEye, idSkipSphere;
 
 // constants, global for now
 extern const GLfloat mat_white[];
@@ -35,6 +35,9 @@ extern int max_speed;
 extern glm::vec3 eye;
 
 extern bool use_mass; // assign the relative mass of planets to balls
+
+extern GLuint ballPosUBO;
+extern glm::vec4 ballPosData[16];
 
 typedef enum poolgamestate_enum
 {
@@ -97,6 +100,8 @@ extern Mix_Chunk *sadwhistle;
 // methods and such:
 
 void load_assets(); 
+void init_shadow_buffers();
+void update_shadow_buffers();
 
 // these play sounds:
 void squirble();

@@ -12,56 +12,61 @@ namespace PoolGame
 class PoolBall 
 {
 public:
-	PoolBall(PoolTable *t, double initx, double initz, double initmass, int number);
-	~PoolBall();
+    PoolBall(PoolTable *t, double initx, double initz, double initmass, int number);
+    ~PoolBall();
 
-	void render(glm::dmat4 &parent_model);
-	double distance_squared(PoolBall& other);
+    glm::vec3 fpos(); // return position as vector
+    glm::dvec3 dpos(); // same but in stupid precision
 
-	void friction(double time_fraction);
+    glm::vec4 fpos4();
 
-	void move(double time_fraction);
+    void render(glm::dmat4 &parent_model);
+    double distance_squared(PoolBall& other);
 
-	static SimpleMesh mesh;
+    void friction(double time_fraction);
 
-	static const double diameter;
-	static const double rolling_friction;
-	static const double COrestitution; // without this, collisions don't look realistic enough
+    void move(double time_fraction);
 
-	void handle_collision(PoolBall& other, long double t, double time_fraction);
+    static SimpleMesh mesh;
 
-	void actually_reposition(double fdx, double fdz);
+    static const double diameter;
+    static const double rolling_friction;
+    static const double COrestitution; // without this, collisions don't look realistic enough
 
-	double movement_remaining; // [0..1], defines how much of time_fraction we still have to roll this frame, in case of partial moves due to collisions
+    void handle_collision(PoolBall& other, long double t, double time_fraction);
 
-	double x, z; // position
+    void actually_reposition(double fdx, double fdz);
 
-	double dx, dz; // velocity
+    double movement_remaining; // [0..1], defines how much of time_fraction we still have to roll this frame, in case of partial moves due to collisions
 
-	//double rotation[16]; // 4x4 rotation matrix for the orientation of the ball
-	glm::dmat4 rotation;
+    double x, z; // position
 
-	double mass;
+    double dx, dz; // velocity
 
-	float material[4];
+    //double rotation[16]; // 4x4 rotation matrix for the orientation of the ball
+    glm::dmat4 rotation;
 
-	GLuint tex;
+    double mass;
 
-	char *name;
+    float material[4];
 
-	PoolTable *table;
-	int index; // our own index in table->ball[] just because this design is uh
-	// probably don't use index to look things up in the array; just
-	// use it for identity
+    GLuint tex;
 
-	bool inplay;
+    char *name;
+
+    PoolTable *table;
+    int index; // our own index in table->ball[] just because this design is uh
+    // probably don't use index to look things up in the array; just
+    // use it for identity
+
+    bool in_play;
 
 private:
 
-	// this is to be called when the ball has been repositioned to the point of collision with a wall
-	void test_pocket();
+    // this is to be called when the ball has been repositioned to the point of collision with a wall
+    void test_pocket();
 
-	friend class PoolTable; // they're like best buddies, for real
+    friend class PoolTable; // they're like best buddies, for real
 };
 
 }

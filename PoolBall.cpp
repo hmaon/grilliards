@@ -26,7 +26,7 @@ SimpleMesh PoolBall::mesh;
 // constructor
 PoolBall::PoolBall(PoolTable *t, double initx, double initz, double dummy, int initindex) : x(initx), z(initz), rotation(1.0), table(t), index(initindex)
 {
-    inplay = true;
+    in_play = true;
 
     movement_remaining = 0.0;
 
@@ -73,12 +73,28 @@ PoolBall::~PoolBall()
 {
 }
 
+glm::vec3 PoolBall::fpos()
+{
+    return glm::vec3(x, diameter / 2, z);
+}
 
+glm::dvec3 PoolBall::dpos()
+{
+    return glm::dvec3(x, diameter / 2, z);
+}
+
+glm::vec4 PoolBall::fpos4()
+{
+    return glm::vec4(x, diameter / 2, z, 1);
+}
 
 // draw the pool ball!
 void PoolBall::render(glm::dmat4 &parent_model)
 {
-    glm::dmat4 model = parent_model * glm::translate(glm::dmat4(1.0), glm::dvec3(x, diameter/2, z)) * rotation * glm::scale(glm::dmat4(1.0), glm::dvec3(diameter/2));
+    if (PoolGame::idSkipSphere == -1) perror("wtf");
+    glUseProgram(idProgram);
+    glUniform1i(PoolGame::idSkipSphere, index); glErrorCheck();
+    glm::dmat4 model = parent_model * glm::translate(glm::dmat4(1.0), dpos()) * rotation * glm::scale(glm::dmat4(1.0), glm::dvec3(diameter/2));
 
     mesh.render(tex, model);
 
@@ -164,12 +180,12 @@ void PoolBall::test_pocket()
         {
             // scratched the cue ball
             state = over;
-            inplay = false;
+            in_play = false;
             sadwhistle();
         } else
         {
             squirble();
-            inplay = false;
+            in_play = false;
         }
     }
 
@@ -190,7 +206,7 @@ void PoolBall::move(double base_time_fraction)
         return;
     }
 
-    if (!inplay) return;
+    if (!in_play) return;
 
     double time_fraction = base_time_fraction * movement_remaining;
 
@@ -343,7 +359,7 @@ void PoolBall::move(double base_time_fraction)
         if (sorted[i]->index == index) continue; // could probably just start at index 1 but let's not make this confusing...
         // test whether other ball has already run move() this frame??? XXX
 
-        if (!(sorted[i]->inplay)) continue; // Don't collide with balls in pockets...
+        if (!(sorted[i]->in_play)) continue; // Don't collide with balls in pockets...
 
         Pabx =  x - sorted[i]-> x; // vector in the direction of the other ball? or whatever? derp
         Pabz =  z - sorted[i]-> z;

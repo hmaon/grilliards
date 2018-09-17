@@ -14,18 +14,18 @@ namespace PoolGame
 class PoolTable
 {
 public:
-	static SimpleMesh cube;
+    static SimpleMesh cube;
 
-	int ballsleft;
-	int balls;
+    int ballsleft;
+    int balls;
 
-	GLint texture;
+    GLint texture;
 
-	static const int maxballs = 20;
+    static const int maxballs = 20;
 
-	PoolBall *ball[maxballs];
+    PoolBall *ball[maxballs];
 
-	void clear_balls();
+    void clear_balls();
 
 
 
@@ -39,10 +39,10 @@ public:
     PoolTable();
     void render(glm::dmat4 &parent_model);
 
-	void update(void);
+    void update(void);
 
 
-	friend class PoolBall;
+    friend class PoolBall;
     //friend class PoolGame;
 };
 

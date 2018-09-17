@@ -65,7 +65,7 @@ glm::vec3 eye;
 GLuint idProgram = -1;
 
 // ids of uniform shader vars that change with every mesh
-GLuint idMVP = -1, idMV = -1, idN = -1, idTex = -1, idEye = -1;
+GLuint idMVP = -1, idMV = -1, idN = -1, idTex = -1, idEye = -1, idSkipSphere = -1;
 
 PoolGameState state = intro; 
 PoolGameMode mode = amazeballs; 
@@ -74,6 +74,10 @@ PoolGameMode mode = amazeballs;
 // graphics and sound assets, such as they are:
 GLint textures[NUM_TEXTURED_BALLS] = {-1};
 GLint tabletexture = -1;
+
+// buffers for ball locations for raytracing needs @_@
+GLuint ballPosUBO = -1;
+glm::vec4 ballPosData[16];
 
 namespace Sounds
 {
@@ -454,7 +458,7 @@ void display1(void)
         {
             for (int i = 0; i < table->balls; ++i)
             {
-                if (!table->ball[i]->inplay) continue;
+                if (!table->ball[i]->in_play) continue;
                 double ener_i = table->ball[i]->mass * (pow(table->ball[i]->dx,2) + pow(table->ball[i]->dz,2));
                 if (ener_i > energy)
                 {
@@ -759,7 +763,7 @@ void display1(void)
             glutBitmapString(GLUT_BITMAP_HELVETICA_18, (unsigned char*)
                 "You ");
             glutBitmapString(GLUT_BITMAP_HELVETICA_18, (unsigned char*)
-                (table->ball[0]->inplay ? "won! :D" : "scratched. :("));
+                (table->ball[0]->in_play ? "won! :D" : "scratched. :("));
 
 #if  defined(_WIN32) && !defined(__MINGW32__)
             sprintf_s((char*)hits_str, 63, "It took %d hits.", hits);
@@ -807,7 +811,7 @@ void set_scene_uniform_vars()
     glUniform4fv(glGetUniformLocation(idProgram, "light_ambient[0]"), 1, dim_ambiance); glErrorCheck();
     glUniform4fv(glGetUniformLocation(idProgram, "light_diffuse[0]"), 1, tungsten_100w); glErrorCheck();
     glUniform4fv(glGetUniformLocation(idProgram, "light_specular[0]"), 1, tungsten_100w); glErrorCheck();
-    glUniform1f(glGetUniformLocation(idProgram, "light_quadraticAttenuation[0]"), 0.1f); glErrorCheck();
+    glUniform1f(glGetUniformLocation(idProgram, "light_quadraticAttenuation[0]"), 0.5f); glErrorCheck();
 }
 
 
@@ -816,6 +820,7 @@ void gogogo()
 
     load_assets();
     set_scene_uniform_vars();
+    init_shadow_buffers();
 
     if (table == NULL) 
     {
@@ -831,15 +836,44 @@ void gogogo()
 }
 
 
+// send data on ball positions to shaders via UBO
+void update_shadow_buffers()
+{
+    glBindBuffer(GL_UNIFORM_BUFFER, ballPosUBO);
+    glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(ballPosData), ballPosData);
+    glBindBuffer(GL_UNIFORM_BUFFER, 0);
+}
+
+// create UBO instance for ball position data (for shadow raytracing, etc.)
+void init_shadow_buffers()
+{
+    const GLuint BINDING = 0; // we only have one UBO in the whole game, thus one block binding and it is 0
+    auto sphere_pos_index = glGetUniformBlockIndex(idProgram, "SpherePositions"); glErrorCheck();
+    glUniformBlockBinding(idProgram, sphere_pos_index, BINDING); glErrorCheck(); 
+
+    glGenBuffers(1, &ballPosUBO); glErrorCheck();
+
+    glBindBuffer(GL_UNIFORM_BUFFER, ballPosUBO); glErrorCheck();
+    glBufferData(GL_UNIFORM_BUFFER, sizeof(ballPosData), NULL, GL_STATIC_DRAW); glErrorCheck();
+    glBindBuffer(GL_UNIFORM_BUFFER, 0); glErrorCheck();
+
+    glBindBufferBase(GL_UNIFORM_BUFFER, BINDING, ballPosUBO); glErrorCheck();
+
+
+    for (int i = 0; i < NUM_TEXTURED_BALLS; ++i) ballPosData[i].x = ballPosData[i].y = ballPosData[i].z = ballPosData[i].w = 0;
+    update_shadow_buffers();
+}
+
+
 void load_assets()
 {
-    idProgram = LoadShaders("Fixed.vert.glsl", "TextureFragmentShader.glsl"); glErrorCheck();
+    idProgram = LoadShaders("data/Fixed.vert.glsl", "data/TextureFragmentShader.glsl"); glErrorCheck();
     idMVP = glGetUniformLocation(idProgram, "MVP"); glErrorCheck();	
     idMV = glGetUniformLocation(idProgram, "MV"); glErrorCheck();	
     idN = glGetUniformLocation(idProgram, "N"); glErrorCheck();	
     idTex = glGetUniformLocation(idProgram, "tex_id"); glErrorCheck();
     idEye = glGetUniformLocation(idProgram, "eye_position"); glErrorCheck();
-
+    idSkipSphere = glGetUniformLocation(idProgram, "skip_sphere"); glErrorCheck();
 
     if (!PoolBall::mesh.loaded) PoolBall::mesh.load("data/ico4uv.obj");
 

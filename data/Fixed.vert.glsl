@@ -12,6 +12,7 @@ layout(location = 2) in vec3 vertexNormal_modelspace;
 // Output data ; will be interpolated for each fragment.
 out vec2 UV;
 out vec4 color_part;
+out vec4 pos; // world-space position
 
 flat out vec3 lightVec_viewspace[2];
 out vec3 normal_viewspace;
@@ -213,4 +214,5 @@ void main (void)
     //ftexgen(transformedNormal, ecPosition);
     gl_Position = MVP * vec4(vertexPosition_modelspace,1);
 	UV = vertexUV;
+	pos = M * vec4(vertexPosition_modelspace,1);
 }
