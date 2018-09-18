@@ -92,7 +92,7 @@ Mix_Chunk *sadwhistle = NULL;
 
 //#define NUM_TEXTURES 16
 BallInfos bally[NUM_TEXTURED_BALLS] = {
-    {"data/celestia.png",    0.3,    "Princess Celestia"},
+    {"data/bongocat.png",    0.3,    "Cue Ball"},
     {"data/mercurymap.jpg",  0.055,  "Mercury"},
     {"data/venusmap.jpg",    0.815,  "Venus"},
     {"data/earth.jpg",       1,      "Earth"},
