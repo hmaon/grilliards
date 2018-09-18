@@ -15,7 +15,7 @@ class PoolBall;
 extern GLuint idProgram;
 
 // MVP matrix and other ids, needed everywhere...
-extern GLuint idMVP, idMV, idN, idTex, idEye, idSkipSphere;
+extern GLuint idMVP, idMV, idN, idTex, idEye, idSkipSphere, idSpecular;
 
 // constants, global for now
 extern const GLfloat mat_white[];

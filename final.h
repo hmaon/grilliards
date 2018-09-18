@@ -64,18 +64,20 @@ extern void (*finalIdleFunc)(void);
 const char *strGLError(GLenum glErr);
 
 
-#define glErrorCheck() {\
-    GLenum glErr;\
-    if ((glErr = glGetError()) != GL_NO_ERROR)\
-    {\
-        \
-        do \
-        { \
-            printf("%s:%d %s %s\n", __FILE__, __LINE__, ": glGetError() complaint: ", strGLError(glErr));\
-        } while (((glErr = glGetError()) != GL_NO_ERROR));\
-        exit(1);\
-    }\
+static void glErrorCheckFunc(char *file, unsigned int line) {
+    GLenum glErr;
+    if ((glErr = glGetError()) != GL_NO_ERROR)
+    {
+        
+        do 
+        { 
+            printf("%s:%u %s %s\n", file, line, ": glGetError() complaint: ", strGLError(glErr));
+        } while (((glErr = glGetError()) != GL_NO_ERROR));
+        exit(1);
+    }
 }
+
+#define glErrorCheck() (glErrorCheckFunc(__FILE__, __LINE__))
 
 inline glm::mat4 &operator << (glm::mat4 &a, glm::dmat4 b)
 {

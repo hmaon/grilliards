@@ -116,7 +116,8 @@ void main(){
 	for (int i = 0; i < NUM_SPHERES; ++i)
 	{
 		if (i == skip_sphere) continue;
-
+		if (!ray_sphere_intersection(lightPosition_worldspace[0].xyz, pos.xyz, SpherePos[i].xyz, SPHERE_RADIUS * 3)) continue; // fast fail for distant points...
+		
 		float hits = 0;
 		float tests = 0;
 		
@@ -124,9 +125,9 @@ void main(){
 		//shadow *= step(SPHERE_RADIUS, distance(pos.xyz, sPos));
 		
 		// take multiple samples
-		for (float x = -LIGHT_RADIUS; x < LIGHT_RADIUS; x += LIGHT_RADIUS * 0.249)
+		for (float x = -LIGHT_RADIUS; x < LIGHT_RADIUS; x += LIGHT_RADIUS * 0.332)
 		{
-			for (float y = -LIGHT_RADIUS; y < LIGHT_RADIUS; y += LIGHT_RADIUS * 0.249)
+			for (float y = -LIGHT_RADIUS; y < LIGHT_RADIUS; y += LIGHT_RADIUS * 0.332)
 			{
 				tests++;
 				vec3 lightOffset = vec3(x, y, 0) 
@@ -141,12 +142,13 @@ void main(){
 		}
 		
 		shadow *= 1.0 - (hits / tests);
+		if (shadow < 0.5) break;
 	}
 
 	// Output color = color of the texture at the specified UV
 	c += diffuse * light_diffuse[0] * nDotVP * shadow;
 	c *= texture2D( tex_id, UV );
-	c += specular * light_specular[0] * pf;
+	c += specular * light_specular[0] * pf * shadow;
 
 	color = clamp(c, 0, 1).rgb;
 }

@@ -116,6 +116,7 @@ void PoolTable::render(glm::dmat4 &parent_model)
 
     glUseProgram(idProgram);
     glUniform1i(PoolGame::idSkipSphere, -1); glErrorCheck();
+    glUniform1f(PoolGame::idSpecular, 0.05f); glErrorCheck();
 
     auto table_model = parent_model; // model should be of the correct dimensions in the mesh file
     cube.render(texture, table_model);
@@ -191,7 +192,7 @@ void PoolTable::render(glm::dmat4 &parent_model)
     // draw the balls
     //
 
-    model = parent_model * glm::translate(glm::dmat4(1.0), glm::dvec3(0, 5 + ball[0]->diameter, 0));
+    model = parent_model * glm::translate(glm::dmat4(1.0), glm::dvec3(0, 4.5f + ball[0]->diameter, 0));
 
     if (balls > 0)
     {

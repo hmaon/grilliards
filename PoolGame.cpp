@@ -65,7 +65,7 @@ glm::vec3 eye;
 GLuint idProgram = -1;
 
 // ids of uniform shader vars that change with every mesh
-GLuint idMVP = -1, idMV = -1, idN = -1, idTex = -1, idEye = -1, idSkipSphere = -1;
+GLuint idMVP = -1, idMV = -1, idN = -1, idTex = -1, idEye = -1, idSkipSphere = -1, idSpecular = -1;
 
 PoolGameState state = intro; 
 PoolGameMode mode = amazeballs; 
@@ -874,6 +874,7 @@ void load_assets()
     idTex = glGetUniformLocation(idProgram, "tex_id"); glErrorCheck();
     idEye = glGetUniformLocation(idProgram, "eye_position"); glErrorCheck();
     idSkipSphere = glGetUniformLocation(idProgram, "skip_sphere"); glErrorCheck();
+    idSpecular = glGetUniformLocation(idProgram, "specular"); glErrorCheck();
 
     if (!PoolBall::mesh.loaded) PoolBall::mesh.load("data/ico4uv.obj");
 
