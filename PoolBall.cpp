@@ -96,6 +96,7 @@ void PoolBall::render(glm::dmat4 &parent_model)
     glUniform1i(PoolGame::idSkipSphere, index); glErrorCheck();
     glUniform1f(PoolGame::idSpecular, 0.9f); glErrorCheck();
     glm::dmat4 model = parent_model * glm::translate(glm::dmat4(1.0), dpos()) * rotation * glm::scale(glm::dmat4(1.0), glm::dvec3(diameter/2));
+    // NOTE: mesh has a diameter of 2 in .obj data >_<
 
     mesh.render(tex, model);
 
